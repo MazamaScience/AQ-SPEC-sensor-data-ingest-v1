@@ -54,8 +54,8 @@ createAirSensor_annual: setup
 ################################################################################
 # Videos
 
-createVideo: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createVideo_exec.R --outputDir=/app/output --logDir=/app/logs --communityID=SCNP
+createVideo: setup 
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createVideo_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --communityID=SCNP
 
 ################################################################################
 # main targets
@@ -64,7 +64,7 @@ show_output:
 	echo ""
 	cd $(BASE_PATH)/output; find `pwd`
 	
-full_test_suite: clean setup createPAS createPAT_latest createPAT_extended createPAT_201904 createPAT_201710 createAirSensor_latest createAirSensor_extended createVideo
+full_test_suite: clean setup createPAS createPAT_latest createPAT_extended createPAT_201904 createPAT_201710 createAirSensor_latest createAirSensor_extended
 	echo ""
 	cd $(BASE_PATH)/output; find `pwd`	
 
