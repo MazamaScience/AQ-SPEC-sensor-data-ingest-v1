@@ -1,0 +1,69 @@
+################################################################################
+#                                                                              #
+# 2019-06-27                                                                   #
+# Example crontab                                                              #
+#                                                                              #
+# Note that arguments to the  ~_exec script will be run inside the docker      #
+# container and refer to the absolute path of directories in that container.   #
+# The '-v' command mounts host machine directories to container directories.   #
+#                                                                              #
+# Note that /home/mazama is found inside the docker image.                     #
+################################################################################
+
+################################################################################
+# NOTES:
+# 
+# All internal times and all file timestamps are in UTC. Conversion to sensor
+# local time occurs during processing of requests and calculation of results.
+#
+# The "pas" (Purple Air Synoptic) files are built from the the geojson files 
+# used to populate the Purple Air map. We use this data solely for sensor 
+# metadata, including the keys needed to access timeseries data. The "pat"
+# generation script depends on the previous generation of a "pas" file.
+#
+################################################################################
+
+# ----- Create "pas" files once per day at 01:02 UTC ---------------------------
+
+02 01 * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createPAS_exec.R --archiveBaseDir=/data --logDir=/logs
+
+# ----- Create "pat" latest files once per hour at **:05 UTC -------------------
+
+05 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createPAT_latest_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="WA"
+
+15 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createPAT_latest_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="OR"
+
+# ----- California only once per day
+
+00 00 * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createPAT_latest_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="CA"
+
+# ----- Create "airsensor" latest files after "pat" files at +30 minutes -------
+
+35 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_latest_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="WA"  --collectionName="WA"
+
+45 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_latest_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="OR"  --collectionName="OR"
+
+# ----- California only once per day
+
+00 12 * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_latest_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="CA"  --collectionName="CA"
+
+# ----- Create "pat" extended files at +05 minutes -----------------------------
+
+40 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createPAT_extended_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="WA"
+
+50 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createPAT_extended_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="OR"
+
+# ----- California only once per day
+
+50 15 * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createPAT_extended_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode="CA"
+
+# ----- Create "airsensor" extended files at +05 minutes -----------------------
+
+45 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_extended_exec.R --archiveBaseDir=/data --logDir=/logs --collectionName="WA"
+
+55 * * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_extended_exec.R --archiveBaseDir=/data --logDir=/logs --collectionName="OR"
+
+# ----- California only once per day
+
+55 18 * * *    docker run --rm -v /home/ubuntu/Projects/sensor-data-ingest-v1:/app -v /data/PurpleAir/v1:/data -v /data/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_extended_exec.R --archiveBaseDir=/data --logDir=/logs --collectionName="CA"
+
