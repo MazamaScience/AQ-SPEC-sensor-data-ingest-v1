@@ -142,19 +142,16 @@ result <- try({
     next
   }
   
-  # Load year
+  # Conbine latest7 and year
   if ( file.exists(yearPath) ) {
     year <- get(load(yearPath))
+    logger.trace("Joining latest7 and year")
+    monitorIDs <- union(year$meta$monitorID, latest7$meta$monitorID)
+    airsensor <- PWFSLSmoke::monitor_join(year, latest7, monitorIDs) 
   } else {
-    year <- latest7 # default when starting from scratch
+    airsensor <- latest7 # default when starting from scratch
   }
   
-  logger.trace("Updating %s", yearPath)
-  
-  # Join
-  monitorIDs <- union(year$meta$monitorID, latest7$meta$monitorID)
-  airsensor <- PWFSLSmoke::monitor_join(year, latest7, monitorIDs) 
-      
   # Save the annual file
   filename <- paste0("airsensor_", opt$collectionName, "_", yearstamp, ".rda")
   filepath <- file.path(yearDataDir, filename)
