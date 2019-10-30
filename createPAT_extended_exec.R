@@ -195,6 +195,15 @@ result <- try({
       
       logger.trace("Updating %s", latest45Path)
       
+      # NOTE:  PWFSL monitors may come and go so the pwfsl_closest~ data might
+      # NOTE:  be different in latest7 and latest45. We update the latest45
+      # NOTE:  record to always use the latest7$pwfsl_closest~ data so that 
+      # NOTE:  pat_join() doesn't fail with:
+      # NOTE:    "`pat` objects must be of the same monitor"
+      
+      latest45$meta$pwfsl_closestMonitorID <- latest7$meta$pwfsl_closestMonitorID
+      latest45$meta$pwfsl_closestDistance <- latest7$meta$pwfsl_closestDistance
+      
       # Join
       pat_full <- AirSensor::pat_join(latest45, latest7) 
       

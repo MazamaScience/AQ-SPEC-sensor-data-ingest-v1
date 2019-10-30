@@ -138,9 +138,10 @@ result <- try({
     pas_filter(DEVICE_LOCATIONTYPE == "outside") %>%
     pas_filter(stateCode == opt$stateCode) %>%
     pas_filter(stringr::str_detect(label, opt$pattern)) %>%
-    dplyr::pull(label)
+    dplyr::pull(label) %>%
+    unique() # TODO:  Unique for now until we get good locationID_sensorID names
   
-  R_labels <- make.names(labels, unique = TRUE)
+  R_labels <- make.names(labels) # TODO: not needed anymore? #, unique = TRUE)
   
   logger.info("Loading PAT data for %d sensors", length(labels))
   

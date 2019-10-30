@@ -163,20 +163,17 @@ result <- try({
       next
     }
     
-    # Load latest45
-    if ( file.exists(latest45Path) ) {
-      latest45 <- get(load(latest45Path))
-    } else {
-      latest45 <- latest7 # default when starting from scratch
-    }
-    
-    logger.trace("Updating %s", latest45Path)
-    
-    # Join
+  # Combine latest7 and latest45
+  if ( file.exists(latest45Path) ) {
+    latest45 <- get(load(latest45Path))
+    logger.trace("Joining latest7 and latest45")
     monitorIDs <- union(latest45$meta$monitorID, latest7$meta$monitorID)
     sensor_full <- PWFSLSmoke::monitor_join(latest45, latest7, monitorIDs) 
-    
-    # Update the latest45 file
+  } else {
+    sensor_full <- latest7 # default when starting from scratch
+  }
+  
+  # Update the latest45 file
     sensor <- 
       sensor_full %>%
       PWFSLSmoke::monitor_subset(tlim = c(now_m45, now))
