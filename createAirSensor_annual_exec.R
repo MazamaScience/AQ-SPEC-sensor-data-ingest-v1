@@ -147,7 +147,18 @@ result <- try({
     year <- get(load(yearPath))
     logger.trace("Joining latest7 and year")
     monitorIDs <- union(year$meta$monitorID, latest7$meta$monitorID)
-    airsensor <- PWFSLSmoke::monitor_join(year, latest7, monitorIDs) 
+    # TODO:  Remove this when PWFSLSmoke handles joining a monitor object with itself
+    result <- try({
+      airsensor <- PWFSLSmoke::monitor_join(year, latest7, monitorIDs) 
+    }, silent = TRUE)
+    if ( "try-error" %in% class(result) ) {
+      err_msg <- geterrmessage()
+      if ( stringr::str_detect(err_msg, "if (ncol(data) == 1) { : argument is of length zero") ) {
+        # Ignore this one
+      } else {
+        stop(err_msg)
+      }
+    }
   } else {
     airsensor <- latest7 # default when starting from scratch
   }
