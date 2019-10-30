@@ -153,8 +153,9 @@ result <- try({
     }, silent = TRUE)
     if ( "try-error" %in% class(result) ) {
       err_msg <- geterrmessage()
-      if ( stringr::str_detect(err_msg, "if (ncol(data) == 1) { : argument is of length zero") ) {
+      if ( stringr::str_detect(err_msg, "argument is of length zero") ) {
         # Ignore this one
+        airsensor <- latest7
       } else {
         stop(err_msg)
       }
