@@ -144,22 +144,65 @@ result <- try({
   
   # Conbine latest7 and year
   if ( file.exists(yearPath) ) {
-    year <- get(load(yearPath))
-    logger.trace("Joining latest7 and year")
-    monitorIDs <- union(year$meta$monitorID, latest7$meta$monitorID)
-    # TODO:  Remove this when PWFSLSmoke handles joining a monitor object with itself
-    result <- try({
-      airsensor <- PWFSLSmoke::monitor_join(year, latest7, monitorIDs) 
-    }, silent = TRUE)
-    if ( "try-error" %in% class(result) ) {
-      err_msg <- geterrmessage()
-      if ( stringr::str_detect(err_msg, "argument is of length zero") ) {
-        # Ignore this one
-        airsensor <- latest7
-      } else {
-        stop(err_msg)
+    
+    # NOTE:  Don't use PWFSLSmoke::monitor_join(). (ver 1.2.103 has bugs)
+    
+    # TODO:  We have a basic problem with the pwfsl_closest~ variables.
+    # TODO:  These can change whan a new, temprary monitor gets installed.
+    # TODO:  We don't want to have two separate metadata records for a single 
+    # TODO:  Sensor as the metadata is supposed to be location-specific and
+    # TODO:  not time-dependent. Unfortunately, the location of the nearest
+    # TODO:  PWFSL monitor is time-dependent and any choice we make will break
+    # TODO:  things like pat_externalFit() for those periods when a temporary
+    # TODO:  monitor is closer than a permanent monitor.
+    # TODO:
+    # TODO:  Ideally, enhanceSynopticData() would have some concept of
+    # TODO:  "permanent" monitors but this is far beyond what is currently
+    # TODO:  supported.
+    
+    # Update year_meta with mutable information
+    year_meta <- year$meta
+    for ( index_year in seq_len(nrow(year$meta)) ) {
+      monitorID <- year_meta$monitorID[index_year]
+      if ( monitorID %in% latest7$meta$monitorID ) {
+        index_latest7 <- which(latest7$meta$monitorID == monitorID)
+        year_meta$pwfsl_closestDistance[index_year] <-
+          latest7$meta$pwfsl_closestDistance[index_latest7]
+        year_meta$pwfsl_closestMonitorID[index_year] <-
+          latest7$meta$pwfsl_closestMonitorID[index_latest7]
       }
     }
+
+    #  Combine meta
+    suppressMessages({
+      meta <- dplyr::full_join(year_meta, latest7$meta, by = NULL)
+    })
+    
+    # Strip off data overlap
+    year_data <- 
+      year$data %>%
+      dplyr::filter(datetime < latest7$data$datetime[1])
+    
+    # Combine data
+    suppressMessages({
+      data <- 
+        dplyr::full_join(year_data, latest7$data, by = NULL) %>%
+        dplyr::arrange(datetime)
+    })
+    
+    # Create an "airsensor" object
+    airsensor <- list(
+      meta = meta, 
+      data = data
+    )
+    class(airsensor) <- c("airsensor", "ws_monitor", "list")
+    
+    # Guarante that the order of meta and data agree
+    airsensor <- PWFSLSmoke::monitor_subset(airsensor)
+    
+    # Add "airsensor" class back again
+    class(airsensor) <- union("airsensor", class(airsensor))
+    
   } else {
     airsensor <- latest7 # default when starting from scratch
   }
