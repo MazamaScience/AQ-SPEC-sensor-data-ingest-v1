@@ -156,8 +156,8 @@ result <- try({
   }
   logger.info("Output directory: %s", outputDir)
   
-  logger.info("Loading PAS data")
-  pas <- pas_load() %>%
+  logger.info("Loading PAS data, archival = TRUE")
+  pas <- pas_load(archival = TRUE) %>%
     pas_filter(lastSeenDate > starttime)
   
   # Find the labels of interest, only one per sensor

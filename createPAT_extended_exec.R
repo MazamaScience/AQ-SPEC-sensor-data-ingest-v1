@@ -112,8 +112,8 @@ timezone <- "UTC"
 
 result <- try({
   
-  logger.info("Loading PA Synoptic data")
-  pas <- pas_load()
+  logger.info("Loading PA Synoptic data, archival = TRUE")
+  pas <- pas_load(archival = TRUE)
   
   # Find the labels of interest, only one per sensor
   labels <-
