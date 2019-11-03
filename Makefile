@@ -3,9 +3,9 @@
 #
 
 # Set variables
-ARCHIVE_BASE_DIR:=/var/www/html/data/PurpleAir/v1
+ARCHIVE_BASE_DIR:=/var/www/html/data/PurpleAir
 
-EXEC_DIR:=/home/jonathan/AirSensor/local_executables
+EXEC_DIR:=/home/jonathan/AQ-SPEC-sensor-data-ingest-v1
 
 
 ################################################################################
@@ -15,7 +15,7 @@ EXEC_DIR:=/home/jonathan/AirSensor/local_executables
 
 configure_crontabs:
 	sed 's%__EXEC_DIR__%${EXEC_DIR}%g' __crontab_daily.txt | \
-	    sed 's%_ARCHIVE_BASE_DI%${ARCHIVE_BASE_DIR}W%g > crontab_daily.txt
+	    sed 's%__ARCHIVE_BASE_DIR__%${ARCHIVE_BASE_DIR}%g' > crontab_daily.txt
 
 configure_scripts:
 	chmod +x createAirSensor_annual_exec.R
