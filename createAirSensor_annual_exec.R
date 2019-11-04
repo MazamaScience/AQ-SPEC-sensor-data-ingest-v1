@@ -143,7 +143,11 @@ result <- try({
   }
   
   # Conbine latest7 and year
-  if ( file.exists(yearPath) ) {
+  if ( !file.exists(yearPath) ) {
+
+    airsensor <- latest7 # default when starting from scratch
+
+  } else {
     
     # NOTE:  Don't use PWFSLSmoke::monitor_join(). (ver 1.2.103 has bugs)
     
@@ -160,6 +164,8 @@ result <- try({
     # TODO:  "permanent" monitors but this is far beyond what is currently
     # TODO:  supported.
     
+    year <- get(load(yearPath))
+
     # Update year_meta with mutable information
     year_meta <- year$meta
     for ( index_year in seq_len(nrow(year$meta)) ) {
@@ -203,9 +209,7 @@ result <- try({
     # Add "airsensor" class back again
     class(airsensor) <- union("airsensor", class(airsensor))
     
-  } else {
-    airsensor <- latest7 # default when starting from scratch
-  }
+  } # END of file.exists(yearPath)
   
   # Save the annual file
   filename <- paste0("airsensor_", opt$collectionName, "_", yearstamp, ".rda")
