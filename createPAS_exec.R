@@ -5,8 +5,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . added _archival.rda 
-VERSION = "0.1.3"
+#  ----- . ----- . AirSensor 0.5.16 
+VERSION = "0.1.4"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({

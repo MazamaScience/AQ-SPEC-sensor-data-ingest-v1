@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . scaqmd version
-VERSION = "0.1.3"
+#  ----- . ----- . AirSensor 0.5.16
+VERSION = "0.1.4"
 
 library(optparse)      # to parse command line flags
 
@@ -117,6 +117,10 @@ logger.info("Running createAirSensor_latest_exec.R version %s",VERSION)
 sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
 logger.debug("R session:\n\n%s\n", sessionString)
 
+# Command line options
+optionsString <- paste(capture.output(str(opt)), collapse='\n')
+logger.debug('Command line options:\n\n%s\n', optionsString)
+
 # ------ Create AirSensor objects ----------------------------------------------
 
 result <- try({
@@ -134,12 +138,12 @@ result <- try({
   # Find the labels of interest, only one per sensor
   labels <-
     pas %>%
-    pas_filter(is.na(parentID)) %>%
-    pas_filter(DEVICE_LOCATIONTYPE == "outside") %>%
-    pas_filter(stateCode == opt$stateCode) %>%
-    pas_filter(stringr::str_detect(label, opt$pattern)) %>%
-    dplyr::pull(label) %>%
+    pas_getLabels(states = opt$stateCode, pattern = opt$pattern) %>%
     unique() # TODO:  Unique for now until we get good locationID_sensorID names
+  
+  logger.trace(sprintf(
+    "labels = %s", paste0(labels, collapse = ", ")
+  ))
   
   R_labels <- make.names(labels) # TODO: not needed anymore? #, unique = TRUE)
   

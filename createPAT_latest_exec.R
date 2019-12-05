@@ -5,8 +5,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . scaqmd version
-VERSION = "0.1.3"
+#  ----- . ----- . AirSensor 0.5.16
+VERSION = "0.1.4"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -72,6 +72,10 @@ if ( opt$version ) {
   cat(paste0("createPAT_latest_exec.R ",VERSION,"\n"))
   quit()
 }
+
+# Command line options
+optionsString <- paste(capture.output(str(opt)), collapse='\n')
+logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ----- Validate parameters ----------------------------------------------------
 

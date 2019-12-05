@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . scaqmd version
-VERSION = "0.1.3"
+#  ----- . ----- . AirSensor 0.5.16
+VERSION = "0.1.4"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -99,6 +99,10 @@ logger.info("Running createAirSensor_extended_exec.R version %s",VERSION)
 sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
 logger.debug("R session:\n\n%s\n", sessionString)
 
+# Command line options
+optionsString <- paste(capture.output(str(opt)), collapse='\n')
+logger.debug('Command line options:\n\n%s\n', optionsString)
+
 # ------ Get labels ------------------------------------------------------------
 
 # All datestamps are UTC
@@ -168,32 +172,32 @@ result <- try({
     latest45 <- get(load(latest45Path))
     logger.trace("Joining latest7 and latest45")
     monitorIDs <- union(latest45$meta$monitorID, latest7$meta$monitorID)
-    sensor_full <- PWFSLSmoke::monitor_join(latest45, latest7, monitorIDs) 
+    airsensor_full <- PWFSLSmoke::monitor_join(latest45, latest7, monitorIDs) 
   } else {
-    sensor_full <- latest7 # default when starting from scratch
+    airsensor_full <- latest7 # default when starting from scratch
   }
   
   # Update the latest45 file
-    sensor <- 
-      sensor_full %>%
+    airsensor <- 
+      airsensor_full %>%
       PWFSLSmoke::monitor_subset(tlim = c(now_m45, now))
     
-    save(list="sensor", file = latest45Path)
+    save(list="airsensor", file = latest45Path)
     
     # Update the current month file
-    sensor <- 
-      sensor_full %>%
+    airsensor <- 
+      airsensor_full %>%
       PWFSLSmoke::monitor_subset(tlim = c(cur_monthStart, cur_monthEnd))
 
-    save(list="sensor", file = cur_monthPath)
+    save(list="airsensor", file = cur_monthPath)
     
     # Update the previous month file until 7-days into the current month
     if ( lubridate::day(now) < 7 ) {
-      sensor <- 
-        sensor_full %>%
+      airsensor <- 
+        airsensor_full %>%
         PWFSLSmoke::monitor_subset(tlim = c(prev_monthStart, prev_monthEnd))
 
-      save(list="sensor", file = prev_monthPath)
+      save(list="airsensor", file = prev_monthPath)
     }
     
   }, silent = TRUE)

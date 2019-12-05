@@ -10,8 +10,8 @@
 # ./createVideo_exec.R --communityName="Sycamore Canyon" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE
 # ./createVideo_exec.R -c SCSB -o ~/Desktop/
 
-# ----- . 7-day, smaller, scqamd colors . updated to 2019-10-19 stanard
-VERSION = "0.2.1"
+# ----- . 7-day, smaller, scqamd colors . AirSensor 0.5.16
+VERSION = "0.2.2"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -110,6 +110,10 @@ if (opt$version) {
   cat(paste0("createVideo_exec.R ", VERSION, "\n"))
   quit()
 }
+
+# Command line options
+optionsString <- paste(capture.output(str(opt)), collapse='\n')
+logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ----- Validate parameters ----------------------------------------------------
 

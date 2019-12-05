@@ -28,10 +28,10 @@ createPAS: setup
 # PAT objects
 
 createPAT_latest: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_latest_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --stateCode=CA --pattern=^SCNP_..
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_latest_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --stateCode=CA --pattern=^SC.._..
 	
 createPAT_extended: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_extended_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --stateCode=CA --pattern=^SCNP_..
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_extended_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --stateCode=CA --pattern=^SC.._..
 	
 createPAT_201904: setup
 	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_monthly_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --datestamp=201904 --stateCode=CA --pattern=^SCNP_..
@@ -43,7 +43,7 @@ createPAT_201710: setup
 # AirSensor objects
 
 createAirSensor_latest: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_latest_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --collectionName=scaqmd --stateCode=CA --pattern=^SCNP_..
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_latest_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --collectionName=scaqmd --stateCode=CA --pattern=^SC.._..
 
 createAirSensor_extended: setup
 	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/output:/app/output -v $(BASE_PATH)/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_extended_exec.R --archiveBaseDir=/app/output --logDir=/app/logs --collectionName=scaqmd
