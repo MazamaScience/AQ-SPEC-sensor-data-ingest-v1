@@ -156,6 +156,8 @@ result <- try({
   cur_monthPath <- file.path(cur_monthlyDir, paste0("airsensor_", opt$collectionName, "_", cur_monthStamp, ".rda"))
   prev_monthPath <- file.path(prev_monthlyDir, paste0("airsensor_", opt$collectionName, "_", prev_monthStamp, ".rda"))
   
+  logger.trace("Loading %s", latest7Path)
+
   # Load latest7
   if ( file.exists(latest7Path) ) {
     latest7 <- get(load(latest7Path))
@@ -164,16 +166,27 @@ result <- try({
     next
   }
   
+  logger.trace("Loading %s", latest7Path)
+
   # Combine latest7 and latest45
   if ( file.exists(latest45Path) ) {
     latest45 <- get(load(latest45Path))
     logger.trace("Joining latest7 and latest45")
     monitorIDs <- union(latest45$meta$monitorID, latest7$meta$monitorID)
-    airsensor_full <- PWFSLSmoke::monitor_join(latest45, latest7, monitorIDs) 
+    logger.trace("monitorIDs = %s", paste0(monitorIDs, collapse = ", "))
+    # Handle erros by just defaulting to latest7
+    result <- try({
+      airsensor_full <- PWFSLSmoke::monitor_join(latest45, latest7, monitorIDs) 
+    }, silent = TRUE)
+    if ( "try-error" %in% class(result) ) {
+      airsensor_full <- latest7
+    }
   } else {
     airsensor_full <- latest7 # default when starting from scratch
   }
   
+  logger.trace("Update and save %s", latest45Path)
+
   # Update the latest45 file
   airsensor <- 
     airsensor_full %>%
@@ -181,6 +194,8 @@ result <- try({
   
   save(list="airsensor", file = latest45Path)
   
+  logger.trace("Update and save %s", cur_monthPath)
+
   # Update the current month file
   airsensor <- 
     airsensor_full %>%
@@ -190,6 +205,7 @@ result <- try({
   
   # Update the previous month file until 7-days into the current month
   if ( lubridate::day(now) < 7 ) {
+    logger.trace("Update and save %s", prev_monthPath)
     airsensor <- 
       airsensor_full %>%
       PWFSLSmoke::monitor_subset(tlim = c(prev_monthStart, prev_monthEnd))
