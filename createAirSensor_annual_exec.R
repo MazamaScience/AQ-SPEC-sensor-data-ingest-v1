@@ -22,8 +22,8 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd()),
-    logDir = file.path(getwd()),
+    archiveBaseDir = file.path(getwd(), "output"),
+    logDir = file.path(getwd(), "logs"),
     datestamp = "2019",
     collectionName = "scaqmd",
     version = FALSE
@@ -144,8 +144,9 @@ result <- try({
   if ( file.exists(latest7Path) ) {
     latest7 <- get(load(latest7Path))
   } else {
-    logger.trace("Skipping %s, missing %s", opt$collectionName, latest7Path)
-    next
+    err_msg <- paste0("Missing ", latest7Path)
+    logger.error(err_msg)
+    stop(err_msg)
   }
   
   # Conbine latest7 and year
@@ -189,9 +190,19 @@ result <- try({
 
     logger.trace("Combining metadata")
 
+    # NOTE:  Despite the efforts above, if a sensor has a new *location* there
+    # NOTE:  is nothing we can do to avoid duplicates. So we have to filter for
+    # NOTE:  uniqueness at this point as having duplicate monitorIDs in the 
+    # NOTE:  meta dataframe breaks the data model.
+    
     #  Combine meta
     suppressMessages({
-      meta <- dplyr::full_join(year_meta, latest7$meta, by = NULL)
+      meta <- 
+        # Join the latest and yearly meta in that order to keep newer locations 
+        dplyr::full_join(latest7$meta, year_meta, by = NULL) %>%
+        # Remove rows with duplicate monitorID which we use as a unique identifier
+        dplyr::distinct(monitorID, .keep_all = TRUE)
+        
     })
     
     logger.trace("Datetime filtering")
