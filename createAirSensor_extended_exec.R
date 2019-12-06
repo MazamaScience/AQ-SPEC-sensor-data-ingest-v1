@@ -166,10 +166,9 @@ result <- try({
     next
   }
   
-  logger.trace("Loading %s", latest7Path)
-
   # Combine latest7 and latest45
   if ( file.exists(latest45Path) ) {
+    logger.trace("Loading %s", latest45Path)
     latest45 <- get(load(latest45Path))
     logger.trace("Joining latest7 and latest45")
     monitorIDs <- union(latest45$meta$monitorID, latest7$meta$monitorID)

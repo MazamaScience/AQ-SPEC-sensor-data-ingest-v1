@@ -138,6 +138,8 @@ result <- try({
   # cur_monthPath <- file.path(cur_monthlyDir, paste0("airsensor_", opt$collectionName, "_", cur_monthStamp, ".rda"))
   # prev_monthPath <- file.path(prev_monthlyDir, paste0("airsensor_", opt$collectionName, "_", prev_monthStamp, ".rda"))
   
+  logger.trace("Loading %s", latest7Path)
+
   # Load latest7
   if ( file.exists(latest7Path) ) {
     latest7 <- get(load(latest7Path))
@@ -168,12 +170,14 @@ result <- try({
     # TODO:  "permanent" monitors but this is far beyond what is currently
     # TODO:  supported.
     
+    logger.trace("Loading %s", yearPath)
     year <- get(load(yearPath))
 
     # Update year_meta with mutable information
     year_meta <- year$meta
     for ( index_year in seq_len(nrow(year$meta)) ) {
       monitorID <- year_meta$monitorID[index_year]
+      logger.trace("Updating pwfsl_closestMonitorID for %s", monitorID)
       if ( monitorID %in% latest7$meta$monitorID ) {
         index_latest7 <- which(latest7$meta$monitorID == monitorID)
         year_meta$pwfsl_closestDistance[index_year] <-
@@ -183,16 +187,22 @@ result <- try({
       }
     }
 
+    logger.trace("Combining metadata")
+
     #  Combine meta
     suppressMessages({
       meta <- dplyr::full_join(year_meta, latest7$meta, by = NULL)
     })
     
+    logger.trace("Datetime filtering")
+
     # Strip off data overlap
     year_data <- 
       year$data %>%
       dplyr::filter(datetime < latest7$data$datetime[1])
     
+    logger.trace("Combining data")
+
     # Combine data
     suppressMessages({
       data <- 
@@ -200,6 +210,11 @@ result <- try({
         dplyr::arrange(datetime)
     })
     
+    logger.trace("Create airsensor object")
+
+    logger.trace("meta$monitorID = %s", paste0(meta$monitorID, collapse = ", "))
+    logger.trace("names(data) = %s", paste0(names(data), collapse = ", "))
+
     # Create an "airsensor" object
     airsensor <- list(
       meta = meta, 
@@ -207,12 +222,16 @@ result <- try({
     )
     class(airsensor) <- c("airsensor", "ws_monitor", "list")
     
+    logger.trace("Calling PWFSLSmoke::monitor_subset(airsensor)")
+
     # Guarante that the order of meta and data agree
     airsensor <- PWFSLSmoke::monitor_subset(airsensor)
     
     # Add "airsensor" class back again
     class(airsensor) <- union("airsensor", class(airsensor))
     
+    logger.trace("Successfully built the annual airsensor object")
+
   } # END of file.exists(yearPath)
   
   # Save the annual file
