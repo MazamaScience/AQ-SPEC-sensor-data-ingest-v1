@@ -151,22 +151,19 @@ if ( "try-error" %in% class(result) ) {
 
 result <- try({
   
-  # Try block so we keep chugging if one sensor fails
-  result <- try({
-    
-    latest7Path <- file.path(latestDataDir, paste0("airsensor_", opt$collectionName, "_latest7.rda"))
-    latest45Path <- file.path(latestDataDir, paste0("airsensor_", opt$collectionName, "_latest45.rda"))
-    cur_monthPath <- file.path(cur_monthlyDir, paste0("airsensor_", opt$collectionName, "_", cur_monthStamp, ".rda"))
-    prev_monthPath <- file.path(prev_monthlyDir, paste0("airsensor_", opt$collectionName, "_", prev_monthStamp, ".rda"))
-    
-    # Load latest7
-    if ( file.exists(latest7Path) ) {
-      latest7 <- get(load(latest7Path))
-    } else {
-      logger.trace("Skipping %s, missing %s", opt$collectionName, latest7Path)
-      next
-    }
-    
+  latest7Path <- file.path(latestDataDir, paste0("airsensor_", opt$collectionName, "_latest7.rda"))
+  latest45Path <- file.path(latestDataDir, paste0("airsensor_", opt$collectionName, "_latest45.rda"))
+  cur_monthPath <- file.path(cur_monthlyDir, paste0("airsensor_", opt$collectionName, "_", cur_monthStamp, ".rda"))
+  prev_monthPath <- file.path(prev_monthlyDir, paste0("airsensor_", opt$collectionName, "_", prev_monthStamp, ".rda"))
+  
+  # Load latest7
+  if ( file.exists(latest7Path) ) {
+    latest7 <- get(load(latest7Path))
+  } else {
+    logger.trace("Skipping %s, missing %s", opt$collectionName, latest7Path)
+    next
+  }
+  
   # Combine latest7 and latest45
   if ( file.exists(latest45Path) ) {
     latest45 <- get(load(latest45Path))
@@ -178,31 +175,26 @@ result <- try({
   }
   
   # Update the latest45 file
+  airsensor <- 
+    airsensor_full %>%
+    PWFSLSmoke::monitor_subset(tlim = c(now_m45, now))
+  
+  save(list="airsensor", file = latest45Path)
+  
+  # Update the current month file
+  airsensor <- 
+    airsensor_full %>%
+    PWFSLSmoke::monitor_subset(tlim = c(cur_monthStart, cur_monthEnd))
+  
+  save(list="airsensor", file = cur_monthPath)
+  
+  # Update the previous month file until 7-days into the current month
+  if ( lubridate::day(now) < 7 ) {
     airsensor <- 
       airsensor_full %>%
-      PWFSLSmoke::monitor_subset(tlim = c(now_m45, now))
+      PWFSLSmoke::monitor_subset(tlim = c(prev_monthStart, prev_monthEnd))
     
-    save(list="airsensor", file = latest45Path)
-    
-    # Update the current month file
-    airsensor <- 
-      airsensor_full %>%
-      PWFSLSmoke::monitor_subset(tlim = c(cur_monthStart, cur_monthEnd))
-
-    save(list="airsensor", file = cur_monthPath)
-    
-    # Update the previous month file until 7-days into the current month
-    if ( lubridate::day(now) < 7 ) {
-      airsensor <- 
-        airsensor_full %>%
-        PWFSLSmoke::monitor_subset(tlim = c(prev_monthStart, prev_monthEnd))
-
-      save(list="airsensor", file = prev_monthPath)
-    }
-    
-  }, silent = TRUE)
-  if ( "try-error" %in% class(result) ) {
-    logger.warn(geterrmessage())
+    save(list="airsensor", file = prev_monthPath)
   }
   
 }, silent=TRUE)
