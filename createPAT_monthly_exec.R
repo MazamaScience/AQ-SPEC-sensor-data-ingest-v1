@@ -167,11 +167,12 @@ result <- try({
   # Find the labels of interest, only one per sensor
   labels <-
     pas %>%
-    pas_filter(is.na(parentID)) %>%
-    pas_filter(DEVICE_LOCATIONTYPE == "outside") %>%
-    pas_filter(stateCode == opt$stateCode) %>%
-    pas_filter(stringr::str_detect(label, opt$pattern)) %>%
-    dplyr::pull(label)
+    pas_getLabels(states = opt$stateCode, pattern = opt$pattern) %>%
+    unique() # TODO:  Unique for now until we get good locationID_sensorID names
+  
+  logger.trace(sprintf(
+    "labels = %s", paste0(labels, collapse = ", ")
+  ))
   
   R_labels <- make.names(labels, unique = TRUE)
   

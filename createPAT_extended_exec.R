@@ -122,12 +122,14 @@ result <- try({
   # Find the labels of interest, only one per sensor
   labels <-
     pas %>%
-    pas_filter(is.na(parentID)) %>%
-    pas_filter(DEVICE_LOCATIONTYPE == "outside") %>%
-    pas_filter(stateCode == opt$stateCode) %>%
-    pas_filter(stringr::str_detect(label, opt$pattern)) %>%
-    dplyr::pull(label) %>%
-    make.names()
+    pas_getLabels(states = opt$stateCode, pattern = opt$pattern) %>%
+    unique() # TODO:  Unique for now until we get good locationID_sensorID names
+  
+  logger.trace(sprintf(
+    "labels = %s", paste0(labels, collapse = ", ")
+  ))
+  
+  R_labels <- make.names(labels, unique = TRUE)
   
   logger.info("Working with PA Timeseries data for %d sensors", length(labels))
 
@@ -172,21 +174,21 @@ if ( "try-error" %in% class(result) ) {
 
 result <- try({
   
-  for ( label in labels ) {
+  for ( i in seq_along(labels) ) {
     
     # Try block so we keep chugging if one sensor fails
     result <- try({
 
-      latest7Path <- file.path(latestDataDir, paste0("pat_", label, "_latest7.rda"))
-      latest45Path <- file.path(latestDataDir, paste0("pat_", label, "_latest45.rda"))
-      cur_monthPath <- file.path(cur_monthlyDir, paste0("pat_", label, "_", cur_monthStamp, ".rda"))
-      prev_monthPath <- file.path(prev_monthlyDir, paste0("pat_", label, "_", prev_monthStamp, ".rda"))
+      latest7Path <- file.path(latestDataDir, paste0("pat_", R_labels[i], "_latest7.rda"))
+      latest45Path <- file.path(latestDataDir, paste0("pat_", R_labels[i], "_latest45.rda"))
+      cur_monthPath <- file.path(cur_monthlyDir, paste0("pat_", R_labels[i], "_", cur_monthStamp, ".rda"))
+      prev_monthPath <- file.path(prev_monthlyDir, paste0("pat_", R_labels[i], "_", prev_monthStamp, ".rda"))
       
       # Load latest7
       if ( file.exists(latest7Path) ) {
         latest7 <- get(load(latest7Path))
       } else {
-        logger.trace("Skipping %s, missing %s", label, latest7Path)
+        logger.trace("Skipping %s, missing %s", labels[i], latest7Path)
         next
       }
       
