@@ -5,12 +5,11 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor 0.5.16 
-VERSION = "0.1.4"
+#  ---- . AirSensor 0.7.x . ----
+VERSION = "0.2.2"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
   library(MazamaCoreUtils)
   library(AirSensor)
 })
@@ -50,14 +49,14 @@ if ( interactive() ) {
     ),
     make_option(
       c("-V","--version"), 
-      action="store_true", 
+      action = "store_true", 
       default = FALSE, 
       help = "Print out version number [default = \"%default\"]"
     )
   )
   
   # Parse arguments
-  opt <- parse_args(OptionParser(option_list=option_list))
+  opt <- parse_args(OptionParser(option_list = option_list))
   
 }
 
@@ -95,13 +94,13 @@ if ( interactive() ) {
 }
   
 # Silence other warning messages
-options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
+options(warn = -1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
 logger.info("Running createPAS_exec.R version %s\n",VERSION)
-optString <- paste(capture.output(str(opt)), collapse="\n")
+optString <- paste(capture.output(str(opt)), collapse = "\n")
 logger.debug("Script options: \n\n%s\n", optString)
-sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
+sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
 logger.debug("R session:\n\n%s\n", sessionString)
 
 # ------ Create PAS ------------------------------------------------------------
@@ -130,17 +129,17 @@ result <- try({
   
   # Get archival PAS data
   pas <- pas_createNew(
-    baseUrl = 'https://www.purpleair.com/json',
     countryCodes = c('US'),
     includePWFSL = TRUE,
-    lookbackDays = 1e6 # ~720 BC. Rome was in its youth.
+    lookbackDays = 1e6, # ~720 BC. Rome was in its youth.
+    baseUrl = 'https://www.purpleair.com/json'
   )
   
   # Save the archival version
   filename <- paste0("pas_", datestamp, "_archival.rda")
   filepath <- file.path(outputDir, filename)
   logger.info("Writing PAS data to %s", filename)
-  save(list="pas", file = filepath)  
+  save(list = "pas", file = filepath)  
   
   # Filter for those seen in the last week
   starttime <- lubridate::now(tzone = "UTC") - lubridate::ddays(7)
@@ -150,9 +149,9 @@ result <- try({
   filename <- paste0("pas_", datestamp, ".rda")
   filepath <- file.path(outputDir, filename)
   logger.info("Writing PAS data to %s", filename)
-  save(list="pas", file = filepath)  
+  save(list = "pas", file = filepath)  
   
-}, silent=TRUE)
+}, silent = TRUE)
 
 # Handle errors
 if ( "try-error" %in% class(result) ) {
