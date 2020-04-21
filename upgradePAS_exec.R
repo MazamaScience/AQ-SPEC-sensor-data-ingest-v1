@@ -13,8 +13,7 @@ suppressPackageStartupMessages({
   library(AirSensor)
 })
 
-# To avoid an early docker upgrade
-devtools::install_github("MazamaScience/AirSensor")
+# TODO:  Need to rebuild docker image for AirSensor and push to docker hub
 
 # ----- Get command line arguments ---------------------------------------------
 
