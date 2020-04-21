@@ -13,9 +13,6 @@ suppressPackageStartupMessages({
   library(AirSensor)
 })
 
-# To avoid an early docker upgrade
-devtools::install_github("MazamaScience/AirSensor")
-
 # ----- Get command line arguments ---------------------------------------------
 
 if ( interactive() ) {
@@ -70,7 +67,7 @@ if ( interactive() ) {
 
 # Print out version and quit
 if ( opt$version ) {
-  cat(paste0("upgradPAS_exec.R ", VERSION, "\n"))
+  cat(paste0("upgradePAS_exec.R ", VERSION, "\n"))
   quit()
 }
 
@@ -91,14 +88,14 @@ if ( !dir.exists(opt$spatialDataDir) )
 # ----- Set up logging ---------------------------------------------------------
 
 logger.setup(
-  traceLog = file.path(opt$logDir, "upgradPAS_TRACE.log"),
-  debugLog = file.path(opt$logDir, "upgradPAS_DEBUG.log"), 
-  infoLog  = file.path(opt$logDir, "upgradPAS_INFO.log"), 
-  errorLog = file.path(opt$logDir, "upgradPAS_ERROR.log")
+  traceLog = file.path(opt$logDir, "upgradePAS_TRACE.log"),
+  debugLog = file.path(opt$logDir, "upgradePAS_DEBUG.log"), 
+  infoLog  = file.path(opt$logDir, "upgradePAS_INFO.log"), 
+  errorLog = file.path(opt$logDir, "upgradePAS_ERROR.log")
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, "upgradPAS_ERROR.log")
+errorLog <- file.path(opt$logDir, "upgradePAS_ERROR.log")
 
 if ( interactive() ) {
   logger.setLevel(TRACE)
@@ -108,7 +105,7 @@ if ( interactive() ) {
 options(warn = -1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
-logger.info("Running upgradPAS_exec.R version %s\n",VERSION)
+logger.info("Running upgradePAS_exec.R version %s\n",VERSION)
 optString <- paste(capture.output(str(opt)), collapse = "\n")
 logger.debug("Script options: \n\n%s\n", optString)
 sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
@@ -121,17 +118,19 @@ result <- try({
   # Set up MazamaSpatialUtils
   AirSensor::initializeMazamaSpatialUtils(opt$spatialDataDir)
 
-  i <- 1
   for ( file in list.files(opt$oldBaseDir) ) {
 
     logger.trace("Working on %s ...", file)
 
-    old_pas <- MazamaCoreUtils::loadDataFile(file, dataDir = opt$oldBaseDir)
-    pas <- pas_upgrade(old_pas)
-    save(pas, file = file.path(opt$newBaseDir, file))
+    result <- try({
+      old_pas <- MazamaCoreUtils::loadDataFile(file, dataDir = opt$oldBaseDir)
+      pas <- pas_upgrade(old_pas)
+      save(pas, file = file.path(opt$newBaseDir, file))
+    }, silent = FALSE)
 
-    i <- i + 1
-    if ( i > 10 ) break
+    if ( "try-error" %in% class(result) ) {
+      logger.warn("Skipping %s ...", file)
+    }
 
   }
   
