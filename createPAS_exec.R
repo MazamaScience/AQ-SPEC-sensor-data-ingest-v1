@@ -69,13 +69,13 @@ if ( opt$version ) {
 # ----- Validate parameters ----------------------------------------------------
 
 if ( !dir.exists(opt$archiveBaseDir) ) 
-  stop(paste0("archiveBaseDir not found:  ",opt$archiveBaseDir))
+  stop(paste0("archiveBaseDir not found:  ", opt$archiveBaseDir))
 
 if ( !dir.exists(opt$logDir) ) 
-  stop(paste0("logDir not found:  ",opt$logDir))
+  stop(paste0("logDir not found:  ", opt$logDir))
 
 if ( !dir.exists(opt$spatialDataDir) ) 
-  stop(paste0("spatialDataDir not found:  ",opt$spatialDataDir))
+  stop(paste0("spatialDataDir not found:  ", opt$spatialDataDir))
 
 # ----- Set up logging ---------------------------------------------------------
 
@@ -125,7 +125,7 @@ result <- try({
   }
   logger.info("Output directory: %s", outputDir)
   
-  logger.info("Obtaining 'pas' data for %s", datestamp)
+  logger.info("Creating 'pas' data for %s", datestamp)
   
   # Get archival PAS data
   pas <- pas_createNew(
@@ -134,23 +134,23 @@ result <- try({
     lookbackDays = 1e6, # ~720 BC. Rome was in its youth.
     baseUrl = 'https://www.purpleair.com/json'
   )
-  
+
   # Save the archival version
   filename <- paste0("pas_", datestamp, "_archival.rda")
   filepath <- file.path(outputDir, filename)
   logger.info("Writing PAS data to %s", filename)
-  save(list = "pas", file = filepath)  
-  
+  save(list = "pas", file = filepath)
+
   # Filter for those seen in the last week
   starttime <- lubridate::now(tzone = "UTC") - lubridate::ddays(7)
   pas <- dplyr::filter(pas, .data$lastSeenDate >= starttime)
-  
+
   # Save the "latest" version
   filename <- paste0("pas_", datestamp, ".rda")
   filepath <- file.path(outputDir, filename)
   logger.info("Writing PAS data to %s", filename)
-  save(list = "pas", file = filepath)  
-  
+  save(list = "pas", file = filepath)
+
 }, silent = TRUE)
 
 # Handle errors
