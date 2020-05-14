@@ -194,7 +194,7 @@ tryCatch(
     # Init counts
     successCount <- 0
     count <- 0
-    for ( ddID in deviceDeploymentIDs[1:10] ) { # DO TEN FOR DEBUGGING
+    for ( ddID in deviceDeploymentIDs ) {
       # ++ count
       count <- count + 1
 
