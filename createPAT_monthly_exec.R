@@ -1,12 +1,12 @@
 #!/usr/local/bin/Rscript
 
-# This Rscript will download a month's worth timeseries data from Purple Air. 
+# This Rscript will download a month's worth timeseries data from Purple Air.
 #
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor 0.5.16
-VERSION = "0.1.4"
+#  ----- . ----- . AirSensor 0.7.2
+VERSION = "0.1.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -18,59 +18,57 @@ suppressPackageStartupMessages({
 # ----- Get command line arguments ---------------------------------------------
 
 if ( interactive() ) {
-  
+
   # RStudio session
   opt <- list(
     archiveBaseDir = file.path(getwd(), "output"),
     logDir = file.path(getwd(), "logs"),
-    stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
     datestamp = "201909",
     version = FALSE
-  )  
-  
+  )
+
 } else {
-  
+
   # Set up OptionParser
-  library(optparse)
-  
   option_list <- list(
-    make_option(
-      c("-o","--archiveBaseDir"), 
-      default = getwd(), 
+    optparse::make_option(
+      c("-o","--archiveBaseDir"),
+      default = getwd(),
       help = "Output base directory for generated .RData files [default = \"%default\"]"
     ),
-    make_option(
-      c("-l","--logDir"), 
-      default = getwd(), 
+    optparse::make_option(
+      c("-l","--logDir"),
+      default = getwd(),
       help = "Output directory for generated .log file [default = \"%default\"]"
     ),
-    make_option(
-      c("-s","--stateCode"), 
-      default = "CA", 
+    optparse::make_option(
+      c("-s","--stateCode"),
+      default = "CA",
       help = "Two character stateCode used to subset sensors [default = \"%default\"]"
     ),
-    make_option(
-      c("-p","--pattern"), 
+    optparse::make_option(
+      c("-p","--pattern"),
       default = "^[Ss][Cc].._..$",
       help = "String pattern passed to stringr::str_detect [default = \"%default\"]"
     ),
-    make_option(
-      c("-d","--datestamp"), 
-      default = "201907", 
+    optparse::make_option(
+      c("-d","--datestamp"),
+      default = "201907",
       help = "Datestamp specifying the year and month as YYYYMM [default = current month]"
     ),
-    make_option(
-      c("-V","--version"), 
-      action="store_true", 
-      default = FALSE, 
+    optparse::make_option(
+      c("-V","--version"),
+      action="store_true",
+      default = FALSE,
       help = "Print out version number [default = \"%default\"]"
     )
   )
-  
+
   # Parse arguments
-  opt <- parse_args(OptionParser(option_list=option_list))
-  
+  opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
+
+
 }
 
 # Print out version and quit
@@ -85,7 +83,7 @@ logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ----- Validate parameters ----------------------------------------------------
 
-# All datestamps are UTC
+
 timezone <- "UTC"
 
 if ( dir.exists(opt$archiveBaseDir) ) {
@@ -94,12 +92,12 @@ if ( dir.exists(opt$archiveBaseDir) ) {
   stop(paste0("archiveBaseDir not found:  ", opt$archiveBaseDir))
 }
 
-if ( !dir.exists(opt$logDir) ) 
+if ( !dir.exists(opt$logDir) )
   stop(paste0("logDir not found:  ", opt$logDir))
 
 # Default to the current month
-now <- lubridate::now(tzone = timezone)
 if ( opt$datestamp == "" ) {
+  now <- lubridate::now(tzone = timezone)
   opt$datestamp <- strftime(now, "%Y%m01", tz = timezone)
 }
 
@@ -108,115 +106,194 @@ datestamp <- stringr::str_sub(paste0(opt$datestamp,"01"), 1, 8)
 monthstamp <- stringr::str_sub(datestamp, 1, 6)
 yearstamp <- stringr::str_sub(datestamp, 1, 4)
 
+mmstamp <- stringr::str_sub(monthstamp, 5, 6)
+
 # ----- Set up logging ---------------------------------------------------------
 
+# Assign region ID to SCAQMD
+regionID <- 'SCAQMD'
+# if ( is.null(opt$stateCode) ) {
+#   regionID <- opt$countryCode
+# } else {
+#   regionID <- paste0(opt$countryCode, ".", opt$stateCode)
+# }
+
+
 logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createPAT_monthly_",opt$stateCode,"_",monthstamp,"_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createPAT_monthly_",opt$stateCode,"_",monthstamp,"_DEBUG.log")), 
-  infoLog  = file.path(opt$logDir, paste0("createPAT_monthly_",opt$stateCode,"_",monthstamp,"_INFO.log")), 
-  errorLog = file.path(opt$logDir, paste0("createPAT_monthly_",opt$stateCode,"_",monthstamp,"_ERROR.log"))
+  traceLog = file.path(opt$logDir, paste0("createPAT_monthly_",regionID,"_",monthstamp,"_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createPAT_monthly_",regionID,"_",monthstamp,"_DEBUG.log")),
+  infoLog  = file.path(opt$logDir, paste0("createPAT_monthly_",regionID,"_",monthstamp,"_INFO.log")),
+  errorLog = file.path(opt$logDir, paste0("createPAT_monthly_",regionID,"_",monthstamp,"_ERROR.log"))
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createPAT_monthly_",opt$stateCode,"_",monthstamp,"_ERROR.log"))
+errorLog <- file.path(opt$logDir, paste0("createPAT_monthly_",regionID,"_",monthstamp,"_ERROR.log"))
 
 if ( interactive() ) {
   logger.setLevel(TRACE)
 }
 
 # Silence other warning messages
-options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
+options(warn = -1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
 logger.info("Running createPAT_monthly_exec.R version %s",VERSION)
-sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
+optString <- paste(capture.output(str(opt)), collapse = "\n")
+logger.debug("Script options: \n\n%s\n", optString)
+sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
 logger.debug("R session:\n\n%s\n", sessionString)
+
+
+# ------ Get timestamps --------------------------------------------------------
+
+# Get times that extend one day earlier and one day later to ensure we get
+# have a least a full month, regardless of timezone. This overlap is OK
+# because the pat_join() function uses pat_distinct() to remove duplicate
+# records.
+
+tryCatch(
+  expr = {
+    starttime <- MazamaCoreUtils::parseDatetime(datestamp, timezone = timezone)
+    endtime <- lubridate::ceiling_date(starttime + lubridate::ddays(20), unit = "month")
+
+    starttime <- starttime - lubridate::ddays(1)
+    endtime <- endtime + lubridate::ddays(1)
+
+    # Get strings
+    startdate <- strftime(starttime, "%Y%m%d", tz = timezone)
+    enddate <- strftime(endtime, "%Y%m%d", tz = timezone)
+
+    logger.trace("startdate = %s, enddate = %s", startdate, enddate)
+  },
+  error = function(e) {
+    msg <- paste('Error creating datetimes ', e)
+    logger.fatal(msg)
+    stop(msg)
+  }
+)
+
+# Create directory if it doesn't exist
+tryCatch(
+  expr = {
+    outputDir <- file.path(opt$archiveBaseDir, "pat", yearstamp, '/', mmstamp)
+    if ( !dir.exists(outputDir) ) {
+      dir.create(outputDir, recursive = TRUE)
+    }
+    logger.info("Output directory: %s", outputDir)
+  },
+  error = function(e) {
+    msg <- paste('Error validating output directory: ', e)
+    logger.fatal(msg)
+    stop(msg)
+  }
+)
+# ------ Load PAS object -------------------------------------------------------
+
+# Load PAS object
+tryCatch(
+  expr = {
+    logger.info('Load PAS data')
+    setArchiveBaseUrl('http://data.mazamascience.com/PurpleAir/v1')
+    pas <- pas_load()
+  },
+  error = function(e) {
+    msg <- paste('Fatal PAS Load Execution: ', e)
+    logger.fatal(msg)
+    stop(msg)
+  }
+)
+
+# Capture Unique IDs
+tryCatch(
+  expr = {
+    # Get time series unique identifiers
+    deviceDeploymentIDs <-
+      pas %>%
+      pas_filter(.data$DEVICE_LOCATIONTYPE == "outside") %>%
+      pas_filter(is.na(.data$parentID)) %>%
+      pas_filter(stringr::str_detect(.data$label, opt$pattern)) %>%
+      dplyr::pull(.data$deviceDeploymentID)
+  },
+  error = function(e) {
+    msg <- paste('deviceDeploymentID not found: ', e)
+    logger.fatal(msg)
+    stop(msg)
+  }
+)
+
 
 # ------ Create PAT objects ----------------------------------------------------
 
-result <- try({
-  
-  # Get times that extend one day earlier and one day later to ensure we get
-  # have a least a full month, regardless of timezone. This overlap is OK 
-  # because the pat_join() function uses pat_distinct() to remove duplicate 
-  # records.
-  
-  starttime <- MazamaCoreUtils::parseDatetime(datestamp, timezone = timezone)
-  endtime <- lubridate::ceiling_date(starttime + lubridate::ddays(20), unit="month")
-  
-  starttime <- starttime - lubridate::ddays(1)
-  endtime <- endtime + lubridate::ddays(1)
-  
-  # Get strings
-  startdate <- strftime(starttime, "%Y%m%d", tz = timezone)
-  enddate <- strftime(endtime, "%Y%m%d", tz = timezone)
-  
-  logger.trace("startdate = %s, enddate = %s", startdate, enddate)
-  
-  # Create directory if it doesn't exist
-  outputDir <- file.path(opt$archiveBaseDir, "pat", yearstamp)
-  if ( !dir.exists(outputDir) ) {
-    dir.create(outputDir, recursive = TRUE)
-  }
-  logger.info("Output directory: %s", outputDir)
-  
-  logger.info("Loading PAS data, archival = TRUE")
-  pas <- pas_load(archival = TRUE) %>%
-    pas_filter(lastSeenDate > starttime)
-  
-  # Find the labels of interest, only one per sensor
-  labels <-
-    pas %>%
-    pas_getLabels(states = opt$stateCode, pattern = opt$pattern) %>%
-    unique() # TODO:  Unique for now until we get good locationID_sensorID names
-  
-  logger.trace(sprintf(
-    "labels = %s", paste0(labels, collapse = ", ")
-  ))
-  
-  R_labels <- make.names(labels, unique = TRUE)
-  
-  logger.info("Loading PAT data for %d sensors", length(labels))
-  
-  for ( i in seq_along(labels) ) {
-    
-    # Try block so we keep chugging if one sensor fails
-    result <- try({
-      
-      logger.debug("pat_createNew(pas, '%s', '%s', '%s')", 
-                   labels[i], startdate, enddate)
+# Load PAT
+tryCatch(
+  expr = {
+    # Init counts
+    successCount <- 0
+    count <- 0
+    for ( ddID in deviceDeploymentIDs ) {
+      # ++ count
+      count <- count + 1
 
-      pat <- pat_createNew(
-        pas,
-        labels[i],
-        startdate = startdate,
-        enddate = enddate,
-        timezone = "UTC",
-        baseURL = "https://api.thingspeak.com/channels/"
+      # Load the PAT objects
+      tryCatch(
+        expr = {
+          logger.debug(
+            "%4d/%d pat_createNew(id = '%s', label = NULL, pas = pas, '%s', '%s')",
+            count,
+            length(deviceDeploymentIDs),
+            ddID,
+            startdate,
+            enddate
+          )
+
+          # Load via ThingSpeak API JSON
+          pat <- pat_createNew(
+            id = ddID,
+            label = NULL,
+            pas = pas,
+            startdate = startdate,
+            enddate = enddate,
+            timezone = "UTC",
+            baseURL = "https://api.thingspeak.com/channels/"
+          )
+
+          filename <- paste0("pat_", ddID, "_latest7.rda")
+          tryCatch(
+            expr = {
+              filepath <- file.path(outputDir, filename)
+              logger.trace("Writing PAT data to %s", filename)
+              save(pat, file = filepath)
+            },
+            error = function(e) {
+              # NOTE: Throwing a `stop` here will yield a warning to the
+              # NOTE: enclosing tryCatch
+              msg <- paste('Failed to write ', filename, ': ', e)
+              logger.fatal(msg)
+              stop(msg)
+            }
+          )
+          # Count if no errors occur
+          successCount <- successCount + 1
+        },
+        error = function(e) {
+          # Log the failed PAT load and move on
+          logger.warn(e)
+        }
       )
-      
-      filename <- paste0("pat_", R_labels[i], "_", monthstamp, ".rda")
-      filepath <- file.path(outputDir, filename)
-      
-      logger.trace("Writing PAT data to %s", filename)
-      save(list="pat", file=filepath)
-      
-    }, silent = TRUE)
-    if ( "try-error" %in% class(result) ) {
-      logger.warn(geterrmessage())
     }
-    
-  }  
-  
-}, silent=TRUE)
 
-# Handle errors
-if ( "try-error" %in% class(result) ) {
-  msg <- paste("Error creating latest PAT file: ", geterrmessage())
-  logger.fatal(msg)
-} else {
-  # Guarantee that the errorLog exists
-  if ( !file.exists(errorLog) ) dummy <- file.create(errorLog)
-  logger.info("Completed successfully!")
-}
-
+  },
+  error = function(e) {
+    msg <- paste("Error creating latest PAT file: ", e)
+    logger.fatal(msg)
+  },
+  finally = {
+    # End Log info
+    logger.info("%d PAT files were generated.", successCount)
+    logger.info("Completed successfully!")
+    # Guarantee that the errorLog exists
+    if ( !file.exists(errorLog) ) {
+      dummy <- file.create(errorLog)
+    }
+  }
+)

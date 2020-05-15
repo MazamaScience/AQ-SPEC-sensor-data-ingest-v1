@@ -92,25 +92,6 @@ if ( !dir.exists(opt$logDir) )
 
 # ----- Set up logging ---------------------------------------------------------
 
-# logger.setup(
-#   traceLog = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_TRACE.log")),
-#   debugLog = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_DEBUG.log")),
-#   infoLog  = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_INFO.log")),
-#   errorLog = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_ERROR.log"))
-# )
-#
-# # For use at the very end
-# errorLog <- file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_ERROR.log"))
-#
-# # Silence other warning messages
-# options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
-#
-# # Start logging
-# logger.info("Running createPAT_extended_exec.R version %s",VERSION)
-# sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
-# logger.debug("R session:\n\n%s\n", sessionString)
-# ----- Set up logging ---------------------------------------------------------
-
 logger.setup(
   traceLog = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_TRACE.log")),
   debugLog = file.path(opt$logDir, paste0("createPAT_ectended_",opt$stateCode,"_DEBUG.log")),
