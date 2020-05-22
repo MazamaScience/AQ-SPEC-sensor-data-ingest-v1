@@ -5,12 +5,11 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor 0.7.2
-VERSION = "0.1.5"
+#  ----- . AirSensor 0.8.2 . -----
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
   library(MazamaCoreUtils)
   library(AirSensor)
 })
@@ -23,6 +22,8 @@ if ( interactive() ) {
   opt <- list(
     archiveBaseDir = file.path(getwd(), "output"),
     logDir = file.path(getwd(), "logs"),
+    countryCode = "US",
+    stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
     datestamp = "201909",
     version = FALSE
@@ -41,6 +42,11 @@ if ( interactive() ) {
       c("-l","--logDir"),
       default = getwd(),
       help = "Output directory for generated .log file [default = \"%default\"]"
+    ),
+    optparse::make_option(
+      c("-c","--countryCode"), 
+      default = "US", 
+      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-s","--stateCode"),
@@ -73,18 +79,15 @@ if ( interactive() ) {
 
 # Print out version and quit
 if ( opt$version ) {
-  cat(paste0("createPAT_latest_exec.R ",VERSION,"\n"))
+  cat(paste0("createPAT_monthly_exec.R ",VERSION,"\n"))
   quit()
 }
 
-# Command line options
-optionsString <- paste(capture.output(str(opt)), collapse='\n')
-logger.debug('Command line options:\n\n%s\n', optionsString)
-
 # ----- Validate parameters ----------------------------------------------------
 
-
 timezone <- "UTC"
+
+MazamaCoreUtils::stopIfNull(opt$countryCode)
 
 if ( dir.exists(opt$archiveBaseDir) ) {
   setArchiveBaseDir(opt$archiveBaseDir)
@@ -187,14 +190,17 @@ tryCatch(
     stop(msg)
   }
 )
+
 # ------ Load PAS object -------------------------------------------------------
 
 # Load PAS object
 tryCatch(
   expr = {
-    logger.info('Load PAS data')
-    setArchiveBaseUrl('http://data.mazamascience.com/PurpleAir/v1')
-    pas <- pas_load()
+    logger.info('Loading PAS data ...')
+    pas <- 
+      pas_load(archival = TRUE) %>%
+      pas_filter(.data$countryCode == opt$countryCode) %>%
+      pas_filter(.data$lastSeenDate > starttime)
   },
   error = function(e) {
     msg <- paste('Fatal PAS Load Execution: ', e)
@@ -213,6 +219,8 @@ tryCatch(
       pas_filter(is.na(.data$parentID)) %>%
       pas_filter(stringr::str_detect(.data$label, opt$pattern)) %>%
       dplyr::pull(.data$deviceDeploymentID)
+  
+    logger.info("Loading PAT data for %d sensors", length(deviceDeploymentIDs))
   },
   error = function(e) {
     msg <- paste('deviceDeploymentID not found: ', e)
@@ -230,7 +238,7 @@ tryCatch(
     # Init counts
     successCount <- 0
     count <- 0
-    for ( ddID in deviceDeploymentIDs ) {
+    for ( deviceDeploymentID in deviceDeploymentIDs ) {
       # ++ count
       count <- count + 1
 
@@ -241,23 +249,23 @@ tryCatch(
             "%4d/%d pat_createNew(id = '%s', label = NULL, pas = pas, '%s', '%s')",
             count,
             length(deviceDeploymentIDs),
-            ddID,
+            deviceDeploymentID,
             startdate,
             enddate
           )
 
           # Load via ThingSpeak API JSON
           pat <- pat_createNew(
-            id = ddID,
+            id = deviceDeploymentID,
             label = NULL,
             pas = pas,
             startdate = startdate,
             enddate = enddate,
             timezone = "UTC",
-            baseURL = "https://api.thingspeak.com/channels/"
+            baseUrl = "https://api.thingspeak.com/channels/"
           )
 
-          filename <- paste0("pat_", ddID, "_latest7.rda")
+          filename <- paste0("pat_", deviceDeploymentID, "_", monthstamp, ".rda")
           tryCatch(
             expr = {
               filepath <- file.path(outputDir, filename)
@@ -284,12 +292,12 @@ tryCatch(
 
   },
   error = function(e) {
-    msg <- paste("Error creating latest PAT file: ", e)
+    msg <- paste("Error creating monthly PAT file: ", e)
     logger.fatal(msg)
   },
   finally = {
     # End Log info
-    logger.info("%d PAT files were generated.", successCount)
+    logger.info("%d monthly PAT files were generated.", successCount)
     logger.info("Completed successfully!")
     # Guarantee that the errorLog exists
     if ( !file.exists(errorLog) ) {

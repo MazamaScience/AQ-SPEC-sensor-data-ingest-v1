@@ -5,12 +5,11 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor 0.5.16
-VERSION = "0.1.5"
+#  ----- . AirSensor 0.8.x . -----
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
   library(MazamaCoreUtils)
   library(AirSensor)
 })
@@ -23,6 +22,7 @@ if ( interactive() ) {
   opt <- list(
     archiveBaseDir = file.path(getwd(), "output"),
     logDir = file.path(getwd(), "logs"),
+    countryCode = "US",
     stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
     version = FALSE
@@ -40,6 +40,11 @@ if ( interactive() ) {
       c("-l","--logDir"),
       default = getwd(),
       help = "Output directory for generated .log file [default = \"%default\"]"
+    ),
+    optparse::make_option(
+      c("-c","--countryCode"), 
+      default = "US", 
+      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-s","--stateCode"),
@@ -76,6 +81,8 @@ logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ----- Validate parameters ----------------------------------------------------
 
+MazamaCoreUtils::stopIfNull(opt$countryCode)
+
 if ( dir.exists(opt$archiveBaseDir) ) {
   setArchiveBaseDir(opt$archiveBaseDir)
 } else {
@@ -87,15 +94,21 @@ if ( !dir.exists(opt$logDir) )
 
 # ----- Set up logging ---------------------------------------------------------
 
+if ( is.null(opt$stateCode) ) {
+  regionID <- opt$countryCode
+} else {
+  regionID <- paste0(opt$countryCode, ".", opt$stateCode)
+}
+
 logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createPAT_latest_",opt$stateCode,"_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createPAT_latest_",opt$stateCode,"_DEBUG.log")),
-  infoLog  = file.path(opt$logDir, paste0("createPAT_latest_",opt$stateCode,"_INFO.log")),
-  errorLog = file.path(opt$logDir, paste0("createPAT_latest_",opt$stateCode,"_ERROR.log"))
+  traceLog = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_DEBUG.log")), 
+  infoLog  = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_INFO.log")), 
+  errorLog = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_ERROR.log"))
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createPAT_latest_",opt$stateCode,"_ERROR.log"))
+errorLog <- file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_ERROR.log"))
 
 if ( interactive() ) {
   logger.setLevel(TRACE)
@@ -157,9 +170,10 @@ tryCatch(
 # Load PAS object
 tryCatch(
   expr = {
-    logger.info('Load PAS data')
-    setArchiveBaseUrl('http://data.mazamascience.com/PurpleAir/v1')
-    pas <- pas_load()
+    logger.info('Loading PAS data ...')
+    pas <-
+      pas_load() %>%
+      pas_filter(.data$countryCode == opt$countryCode)
   },
   error = function(e) {
     msg <- paste('Fatal PAS Load Execution: ', e)
@@ -168,6 +182,10 @@ tryCatch(
   }
 )
 
+# Subset by state if reqeusted
+if ( !is.null(opt$stateCode) )
+  pas <- pas_filter(pas, .data$stateCode == opt$stateCode)
+  
 # Capture Unique IDs
 tryCatch(
   expr = {
@@ -194,7 +212,9 @@ tryCatch(
     # Init counts
     successCount <- 0
     count <- 0
-    for ( ddID in deviceDeploymentIDs ) {
+
+    for ( deviceDeploymentID in deviceDeploymentIDs ) {
+      
       # ++ count
       count <- count + 1
 
@@ -205,23 +225,23 @@ tryCatch(
             "%4d/%d pat_createNew(id = '%s', label = NULL, pas = pas, '%s', '%s')",
             count,
             length(deviceDeploymentIDs),
-            ddID,
+            deviceDeploymentID,
             startdate,
             enddate
           )
 
           # Load via ThingSpeak API JSON
           pat <- pat_createNew(
-            id = ddID,
+            id = deviceDeploymentID,
             label = NULL,
             pas = pas,
             startdate = startdate,
             enddate = enddate,
             timezone = "UTC",
-            baseURL = "https://api.thingspeak.com/channels/"
+            baseUrl = "https://api.thingspeak.com/channels/"
           )
 
-          filename <- paste0("pat_", ddID, "_latest7.rda")
+          filename <- paste0("pat_", deviceDeploymentID, "_latest7.rda")
           tryCatch(
             expr = {
               filepath <- file.path(outputDir, filename)

@@ -6,19 +6,14 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor R Package v0.7.5
-#  ----- . ----- . AirSensor Docker image v0.7.2
-#  May need to tag
-VERSION = "0.1.5"
+#  ----- . AirSensor 0.8.2 . -----
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
   library(MazamaCoreUtils)
   library(AirSensor)
 })
-
-setArchiveBaseUrl("http://data.mazamascience.com/PurpleAir/v1")
 
 # ----- Get command line arguments ---------------------------------------------
 
@@ -29,6 +24,8 @@ if ( interactive() ) {
   opt <- list(
     archiveBaseDir = file.path(getwd(), "output"),
     logDir = file.path(getwd(), "logs"),
+    countryCode = "US",
+    stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
     version = FALSE
   )
@@ -45,6 +42,11 @@ if ( interactive() ) {
       c("-l","--logDir"),
       default = getwd(),
       help = "Output directory for generated .log file [default = \"%default\"]"
+    ),
+    optparse::make_option(
+      c("-c","--countryCode"), 
+      default = "US", 
+      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-s","--stateCode"),
@@ -81,6 +83,8 @@ logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ----- Validate parameters ----------------------------------------------------
 
+MazamaCoreUtils::stopIfNull(opt$countryCode)
+
 if ( dir.exists(opt$archiveBaseDir) ) {
   setArchiveBaseDir(opt$archiveBaseDir)
 } else {
@@ -92,15 +96,21 @@ if ( !dir.exists(opt$logDir) )
 
 # ----- Set up logging ---------------------------------------------------------
 
+if ( is.null(opt$stateCode) ) {
+  regionID <- opt$countryCode
+} else {
+  regionID <- paste0(opt$countryCode, ".", opt$stateCode)
+}
+
 logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createPAT_ectended_",opt$stateCode,"_DEBUG.log")),
-  infoLog  = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_INFO.log")),
-  errorLog = file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_ERROR.log"))
+  traceLog = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_DEBUG.log")),
+  infoLog  = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_INFO.log")),
+  errorLog = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_ERROR.log"))
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createPAT_extended_",opt$stateCode,"_ERROR.log"))
+errorLog <- file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_ERROR.log"))
 
 if ( interactive() ) {
   logger.setLevel(TRACE)
@@ -117,7 +127,8 @@ sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
 logger.debug("R session:\n\n%s\n", sessionString)
 
 
-# Get timestamps
+# ------ Get timestamps --------------------------------------------------------
+
 tryCatch(
   expr = {
     # All datestamps are UTC
@@ -171,13 +182,15 @@ tryCatch(
   }
 )
 
-# Load PAS Object
+# ------ Load PAS object -------------------------------------------------------
+
 tryCatch(
   expr = {
     # SCAQMD Database
-    setArchiveBaseUrl("http://data.mazamascience.com/PurpleAir/v1") # Necessary?
-    logger.info('Loading PAS data.')
-    pas <- pas_load()
+    logger.info('Loading PAS data ...')
+    pas <- 
+      pas_load() %>%
+      pas_filter(.data$countryCode == opt$countryCode)
   },
   error = function(e) {
     msg <- paste('Fatal PAS load Execution: ', e)
@@ -190,7 +203,8 @@ tryCatch(
 tryCatch(
   expr = {
     logger.info('Capturing Unique Device Deployment IDs')
-    deviceDeploymentIDs <- pas %>%
+    deviceDeploymentIDs <- 
+      pas %>%
       pas_filter(.data$DEVICE_LOCATIONTYPE == 'outside') %>%
       pas_filter(is.na(.data$parentID)) %>%
       pas_filter(stringr::str_detect(.data$label, opt$pattern)) %>%
@@ -211,18 +225,20 @@ tryCatch(
     count <- 0
     successCount <- 0
 
-    for( ddID in deviceDeploymentIDs ) {
+    for( deviceDeploymentID in deviceDeploymentIDs ) {
+
       # update count
       count <- count + 1
+
       tryCatch(
         expr = {
           # Contruct file paths
           tryCatch(
             expr = {
-              latest7Path <- file.path(latestDataDir, paste0("pat_", ddID, "_latest7.rda"))
-              latest45Path <- file.path(latestDataDir, paste0("pat_", ddID, "_latest45.rda"))
-              cur_monthPath <- file.path(cur_monthlyDir, paste0("pat_", ddID, "_", cur_monthStamp, ".rda"))
-              prev_monthPath <- file.path(prev_monthlyDir, paste0("pat_", ddID, "_", prev_monthStamp, ".rda"))
+              latest7Path <- file.path(latestDataDir, paste0("pat_", deviceDeploymentID, "_latest7.rda"))
+              latest45Path <- file.path(latestDataDir, paste0("pat_", deviceDeploymentID, "_latest45.rda"))
+              cur_monthPath <- file.path(cur_monthlyDir, paste0("pat_", deviceDeploymentID, "_", cur_monthStamp, ".rda"))
+              prev_monthPath <- file.path(prev_monthlyDir, paste0("pat_", deviceDeploymentID, "_", prev_monthStamp, ".rda"))
             },
             error = function(e) {
               msg <- paste('Failed to construct file path: ', e)
@@ -235,7 +251,7 @@ tryCatch(
           if ( file.exists(latest7Path) ) {
             latest7 <- get(load(latest7Path))
           } else {
-            logger.trace("Skipping %s, missing %s", ddID, latest7Path)
+            logger.trace("Skipping %s, missing %s", deviceDeploymentID, latest7Path)
             next
           }
 
@@ -293,7 +309,9 @@ tryCatch(
           logger.warn(e)
         }
       )
+
     }
+
   },
   error = function(e) {
     msg <- paste("Error creating extended PAT files: ", e)
