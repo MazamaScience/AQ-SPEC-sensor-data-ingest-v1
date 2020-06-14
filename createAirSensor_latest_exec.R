@@ -9,11 +9,8 @@
 #  ----- . ----- . AirSensor 0.5.16
 VERSION = "0.1.4"
 
-library(optparse)      # to parse command line flags
-
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
   library(MazamaCoreUtils)
   library(AirSensor)
 })
@@ -38,32 +35,32 @@ if ( interactive() ) {
   library(optparse)
   
   option_list <- list(
-    make_option(
+    optparse::make_option(
       c("-o","--archiveBaseDir"), 
       default = getwd(), 
       help = "Output directory for generated .RData files [default = \"%default\"]"
     ),
-    make_option(
+    optparse::make_option(
       c("-l","--logDir"), 
       default = getwd(), 
       help = "Output directory for generated .log file [default = \"%default\"]"
     ),
-    make_option(
+    optparse::make_option(
       c("-s","--stateCode"), 
       default = "CA", 
       help = "Two character stateCode used to subset sensors [default = \"%default\"]"
     ),
-    make_option(
+    optparse::make_option(
       c("-p","--pattern"), 
       default = "^[Ss][Cc].._..$", 
       help = "String pattern passed to stringr::str_detect [default = \"%default\"]"
     ),
-    make_option(
+    optparse::make_option(
       c("-n","--collectionName"), 
       default = "scaqmd", 
       help = "Name associated with this collection of sensors [default = \"%default\"]"
     ),
-    make_option(
+    optparse::make_option(
       c("-V","--version"), 
       action="store_true", 
       default = FALSE, 
@@ -72,7 +69,7 @@ if ( interactive() ) {
   )
   
   # Parse arguments
-  opt <- parse_args(OptionParser(option_list=option_list))
+  opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
   
 }
 
@@ -123,83 +120,109 @@ logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ------ Create AirSensor objects ----------------------------------------------
 
-result <- try({
-  
-  # Create directory if it doesn't exist
-  outputDir <- file.path(opt$archiveBaseDir, "airsensor", "latest")
-  if ( !dir.exists(outputDir) ) {
-    dir.create(outputDir, recursive = TRUE)
-  }
-  logger.info("Output directory: %s", outputDir)
-  
-  logger.info("Loading PAS data")
-  pas <- pas_load()
-  
-  # Find the labels of interest, only one per sensor
-  labels <-
-    pas %>%
-    pas_getLabels(states = opt$stateCode, pattern = opt$pattern) %>%
-    unique() # TODO:  Unique for now until we get good locationID_sensorID names
-  
-  logger.trace(sprintf(
-    "labels = %s", paste0(labels, collapse = ", ")
-  ))
-  
-  R_labels <- make.names(labels) # TODO: not needed anymore? #, unique = TRUE)
-  
-  logger.info("Loading PAT data for %d sensors", length(labels))
-  
-  airSensorList <- list()
-  
-  for ( i in seq_along(labels) ) {
-    
-    label <- labels[i]
-    R_label <- R_labels[i]
-    
-    logger.trace("Working on %s", label)
-    
-    # Keep going even if one sensor fails to load
-    result <- try({
-      
-      airSensorList[[R_label]] <- 
-        pat_loadLatest(label, make.names = TRUE) %>%
-        pat_createAirSensor(
-          period = "1 hour",
-          parameter = "pm25",
-          channel = "ab",
-          qc_algorithm = "hourly_AB_01",
-          min_count = 20
-        )
-      
-    }, silent = TRUE)
-    if ( "try-error" %in% class(result) ) {
-      logger.warn(geterrmessage())
+# Create directory if it doesn't exist
+tryCatch(
+  expr = {
+    outputDir <- file.path(opt$archiveBaseDir, "airsensor", "latest")
+    if ( !dir.exists(outputDir) ) {
+      dir.create(outputDir, recursive = TRUE)
     }
-    
+    logger.info("Output directory: %s", outputDir)
+  }, 
+  error = function(e) {
+    msg <- paste('Error creating datetimes ', e)
+    logger.fatal(msg)
+    stop(msg)
   }
-  
-  logger.trace("Finished creating individual sensors.")
-  
-  airsensor <- PWFSLSmoke::monitor_combine(airSensorList)
-  class(airsensor) <- c("airsensor", "ws_monitor", "list")
-  
-  logger.trace("Finished combining sensors.")
-  
-  filename <- paste0("airsensor_", opt$collectionName, "_latest7.rda")
-  filepath <- file.path(outputDir, filename)
-  
-  logger.info("Writing 'airsensor' data to %s", filename)
-  save(list="airsensor", file = filepath)
-  
-}, silent=TRUE)
+)
 
-# Handle errors
-if ( "try-error" %in% class(result) ) {
-  msg <- paste("Error creating latest AirSensor file: ", geterrmessage())
-  logger.fatal(msg)
-} else {
-  # Guarantee that the errorLog exists
-  if ( !file.exists(errorLog) ) dummy <- file.create(errorLog)
-  logger.info("Completed successfully!")
+# Load PAS object 
+tryCatch(
+  expr = {
+    logger.info('Loading PAS data...')
+    pas <- 
+      pas_load() 
+  }, 
+  error = function(e) {
+    msg <- paste('Fatal PAS Load Execution: ', e)
+    logger.fatal(msg)
+    stop(msg)
+  }
+)
+
+# Capture Unique IDs
+tryCatch(
+  expr = {
+    # Get time series unique identifiers
+    deviceDeploymentIDs <-
+      pas %>%
+      pas_filter(.data$DEVICE_LOCATIONTYPE == "outside") %>%
+      pas_filter(is.na(.data$parentID)) %>%
+      pas_filter(stringr::str_detect(.data$label, opt$pattern)) %>%
+      dplyr::pull(.data$deviceDeploymentID)
+  },
+  error = function(e) {
+    msg <- paste('deviceDeploymentID not found: ', e)
+    logger.fatal(msg)
+    stop(msg)
+  }
+)
+
+logger.info('Creating airsensors...')
+
+# Init counts
+successCount <- 0
+count <- 0
+
+dataList <- list()
+
+for ( ddID in deviceDeploymentIDs ) {
+  count <- count + 1
+  # Debug info
+  logger.debug(
+    "%4d/%d pat_createAirSensor(id = '%s')",
+    count,
+    length(deviceDeploymentIDs),
+    ddID
+  )
+  
+  # Load the pat data, convert to an airsensor and add to dataList
+  dataList[[ddID]] <- tryCatch(
+    expr = {
+      pat_loadLatest(id = ddID) %>% 
+        pat_createAirSensor(
+          FUN = AirSensor::PurpleAirQC_hourly_AB_02
+        )
+    }, 
+    error = function(e) {
+      logger.warn('Failed: Loading PAT data for %s ', ddID)
+      NULL
+    }
+  )
 }
 
+
+# Combine the airsensors to a single ws_monitor opbject and save
+tryCatch(
+  expr = {
+    logger.info('Combining airsensors...')
+    
+    airsensor <- PWFSLSmoke::monitor_combine(dataList)
+    class(airsensor) <- c("airsensor", "ws_monitor", "list")
+    
+    logger.info('Combined successfully...')
+    
+    filename <- paste0("airsensor_", opt$collectionName, "_latest7.rda")
+    filepath <- file.path(outputDir, filename)
+    
+    save(list="airsensor", file = filepath)
+    logger.info("Saved: %s", filename)
+  }, 
+  error = function(e) {
+    msg <- paste("Error creating latest AirSensor file: ", e)
+    logger.fatal(msg)
+  }
+)
+# Guarantee that the errorLog exists
+if ( !file.exists(errorLog) ) dummy <- file.create(errorLog)
+logger.info("Completed successfully!")
