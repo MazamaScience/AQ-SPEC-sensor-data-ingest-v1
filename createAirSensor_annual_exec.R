@@ -24,38 +24,35 @@ if ( interactive() ) {
   opt <- list(
     archiveBaseDir = file.path(getwd(), "output"),
     logDir = file.path(getwd(), "logs"),
-    datestamp = "2019",
+    datestamp = "2020",
     collectionName = "scaqmd",
     version = FALSE
   )  
   
 } else {
-  
-  # Set up OptionParser
-  library(optparse)
-  
+
   option_list <- list(
-    make_option(
+    optparse::make_option(
       c("-o","--archiveBaseDir"), 
       default=getwd(), 
       help = "Output base directory for generated .RData files [default = \"%default\"]"
     ),
-    make_option(
+    optparse::make_option(
       c("-l","--logDir"), 
       default=getwd(), 
       help="Output directory for generated .log file [default=\"%default\"]"
     ),
-    make_option(
+    optparse:: make_option(
       c("-d","--datestamp"), 
       default="", 
       help="Datestamp specifying the year as YYYY [default=current year]"
     ),
-    make_option(
+    optparse::make_option(
       c("-n","--collectionName"), 
       default="scaqmd", 
       help="Name associated with this collection of sensors [default=\"%default\"]"
     ),
-    make_option(
+    optparse::make_option(
       c("-V","--version"), 
       action="store_true", 
       default=FALSE, 
@@ -64,7 +61,7 @@ if ( interactive() ) {
   )
   
   # Parse arguments
-  opt <- parse_args(OptionParser(option_list=option_list))
+  opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
   
 }
 
@@ -131,136 +128,146 @@ logger.debug("R session:\n\n%s\n", sessionString)
 
 # ------ Create annual airsensor object ----------------------------------------
 
-result <- try({
-  
-  latest7Path <- file.path(latestDataDir, paste0("airsensor_", opt$collectionName, "_latest7.rda"))
-  yearPath <- file.path(yearDataDir, paste0("airsensor_", opt$collectionName, "_", yearstamp, ".rda"))
-  # cur_monthPath <- file.path(cur_monthlyDir, paste0("airsensor_", opt$collectionName, "_", cur_monthStamp, ".rda"))
-  # prev_monthPath <- file.path(prev_monthlyDir, paste0("airsensor_", opt$collectionName, "_", prev_monthStamp, ".rda"))
-  
-  logger.trace("Loading %s", latest7Path)
 
-  # Load latest7
-  if ( file.exists(latest7Path) ) {
-    latest7 <- get(load(latest7Path))
-  } else {
-    err_msg <- paste0("Missing ", latest7Path)
-    logger.error(err_msg)
-    stop(err_msg)
-  }
-  
-  # Conbine latest7 and year
-  if ( !file.exists(yearPath) ) {
-
-    airsensor <- latest7 # default when starting from scratch
-
-  } else {
+# Create paths
+tryCatch(
+  expr = {
     
-    # NOTE:  Don't use PWFSLSmoke::monitor_join(). (ver 1.2.103 has bugs)
+    latest7Path <- file.path(latestDataDir, paste0("airsensor_", opt$collectionName, "_latest7.rda"))
+    yearPath <- file.path(yearDataDir, paste0("airsensor_", opt$collectionName, "_", yearstamp, ".rda"))
+    # cur_monthPath <- file.path(cur_monthlyDir, paste0("airsensor_", opt$collectionName, "_", cur_monthStamp, ".rda"))
+    # prev_monthPath <- file.path(prev_monthlyDir, paste0("airsensor_", opt$collectionName, "_", prev_monthStamp, ".rda"))
     
-    # TODO:  We have a basic problem with the pwfsl_closest~ variables.
-    # TODO:  These can change whan a new, temprary monitor gets installed.
-    # TODO:  We don't want to have two separate metadata records for a single 
-    # TODO:  Sensor as the metadata is supposed to be location-specific and
-    # TODO:  not time-dependent. Unfortunately, the location of the nearest
-    # TODO:  PWFSL monitor is time-dependent and any choice we make will break
-    # TODO:  things like pat_externalFit() for those periods when a temporary
-    # TODO:  monitor is closer than a permanent monitor.
-    # TODO:
-    # TODO:  Ideally, enhanceSynopticData() would have some concept of
-    # TODO:  "permanent" monitors but this is far beyond what is currently
-    # TODO:  supported.
+    logger.trace("Loading %s", latest7Path)
     
-    logger.trace("Loading %s", yearPath)
-    year <- get(load(yearPath))
-
-    # Update year_meta with mutable information
-    year_meta <- year$meta
-    for ( index_year in seq_len(nrow(year$meta)) ) {
-      monitorID <- year_meta$monitorID[index_year]
-      logger.trace("Updating pwfsl_closestMonitorID for %s", monitorID)
-      if ( monitorID %in% latest7$meta$monitorID ) {
-        index_latest7 <- which(latest7$meta$monitorID == monitorID)
-        year_meta$pwfsl_closestDistance[index_year] <-
-          latest7$meta$pwfsl_closestDistance[index_latest7]
-        year_meta$pwfsl_closestMonitorID[index_year] <-
-          latest7$meta$pwfsl_closestMonitorID[index_latest7]
-      }
+    # Load latest7
+    if ( file.exists(latest7Path) ) {
+      latest7 <- get(load(latest7Path))
+    } else {
+      err_msg <- paste0("Missing ", latest7Path)
+      logger.error(err_msg)
+      stop(err_msg)
     }
-
-    logger.trace("Combining metadata")
-
-    # NOTE:  Despite the efforts above, if a sensor has a new *location* there
-    # NOTE:  is nothing we can do to avoid duplicates. So we have to filter for
-    # NOTE:  uniqueness at this point as having duplicate monitorIDs in the 
-    # NOTE:  meta dataframe breaks the data model.
     
-    #  Combine meta
-    suppressMessages({
-      meta <- 
-        # Join the latest and yearly meta in that order to keep newer locations 
-        dplyr::full_join(latest7$meta, year_meta, by = NULL) %>%
-        # Remove rows with duplicate monitorID which we use as a unique identifier
-        dplyr::distinct(monitorID, .keep_all = TRUE)
-        
-    })
+  }, 
+  error = function(e) {
+    msg <- paste("Error loading paths: ", e) 
+    logger.fatal(msg)
+    stop(msg)
+  }
+)
+
+# Load airsensor files
+tryCatch(
+  expr = {
+   if ( file.exists(yearPath) ) {
+     
+     # NOTE:  Don't use PWFSLSmoke::monitor_join(). (ver 1.2.103 has bugs)
+     
+     # TODO:  We have a basic problem with the pwfsl_closest~ variables.
+     # TODO:  These can change whan a new, temprary monitor gets installed.
+     # TODO:  We don't want to have two separate metadata records for a single 
+     # TODO:  Sensor as the metadata is supposed to be location-specific and
+     # TODO:  not time-dependent. Unfortunately, the location of the nearest
+     # TODO:  PWFSL monitor is time-dependent and any choice we make will break
+     # TODO:  things like pat_externalFit() for those periods when a temporary
+     # TODO:  monitor is closer than a permanent monitor.
+     # TODO:
+     # TODO:  Ideally, enhanceSynopticData() would have some concept of
+     # TODO:  "permanent" monitors but this is far beyond what is currently
+     # TODO:  supported.
+     
+     logger.trace("Loading %s", yearPath)
+     year <- get(load(yearPath))
+     
+     # Update year_meta with mutable information
+     year_meta <- year$meta
+     for ( index_year in seq_len(nrow(year$meta)) ) {
+       
+       monitorID <- year_meta$monitorID[index_year]
+       logger.trace("Updating pwfsl_closestMonitorID for %s", monitorID)
+       
+       if ( monitorID %in% latest7$meta$monitorID ) {
+         
+         index_latest7 <- which(latest7$meta$monitorID == monitorID)
+         year_meta$pwfsl_closestDistance[index_year] <-
+           latest7$meta$pwfsl_closestDistance[index_latest7]
+         year_meta$pwfsl_closestMonitorID[index_year] <-
+           latest7$meta$pwfsl_closestMonitorID[index_latest7]
+         
+       }
+       
+     }
+     
+     logger.trace("Combining metadata")
+     
+     # NOTE:  Despite the efforts above, if a sensor has a new *location* there
+     # NOTE:  is nothing we can do to avoid duplicates. So we have to filter for
+     # NOTE:  uniqueness at this point as having duplicate monitorIDs in the 
+     # NOTE:  meta dataframe breaks the data model.
+     
+     #  Combine meta
+     suppressMessages({
+       meta <- 
+         # Join the latest and yearly meta in that order to keep newer locations 
+         dplyr::full_join(latest7$meta, year_meta, by = NULL) %>%
+         # Remove rows with duplicate monitorID which we use as a unique identifier
+         dplyr::distinct(monitorID, .keep_all = TRUE)
+       
+     })
+     
+     logger.trace("Datetime filtering")
+     
+     # Strip off data overlap
+     year_data <- 
+       year$data %>%
+       dplyr::filter(datetime < latest7$data$datetime[1])
+     
+     logger.trace("Combining data")
+     
+     # Combine data
+     suppressMessages({
+       data <- 
+         dplyr::full_join(year_data, latest7$data, by = NULL) %>%
+         dplyr::arrange(datetime)
+     })
+     
+     logger.trace("Create airsensor object")
+     
+     logger.trace("meta$monitorID = %s", paste0(meta$monitorID, collapse = ", "))
+     logger.trace("names(data) = %s", paste0(names(data), collapse = ", "))
+     
+     # Create an "airsensor" object
+     airsensor <- list(
+       meta = meta, 
+       data = data
+     )
+     class(airsensor) <- c("airsensor", "ws_monitor", "list")
+     
+     logger.trace("Calling PWFSLSmoke::monitor_subset(airsensor)")
+     
+     # Guarante that the order of meta and data agree
+     airsensor <- PWFSLSmoke::monitor_subset(airsensor)
+     
+     # Add "airsensor" class back again
+     class(airsensor) <- union("airsensor", class(airsensor))
+     
+     logger.trace("Successfully built the annual airsensor")
+     
+   } else {
+     
+     airsensor <- latest7 # default when starting from scratch
+     
+   } 
     
-    logger.trace("Datetime filtering")
+  }, 
+  error = function(e) {
+    msg <- paste("Error creating annual airsensor file: ", e)
+    logger.fatal(msg)
+  }
+)
 
-    # Strip off data overlap
-    year_data <- 
-      year$data %>%
-      dplyr::filter(datetime < latest7$data$datetime[1])
-    
-    logger.trace("Combining data")
+if ( !file.exists(errorLog) ) 
+  dummy <- file.create(errorLog)
+logger.info("Completed successfully!")
 
-    # Combine data
-    suppressMessages({
-      data <- 
-        dplyr::full_join(year_data, latest7$data, by = NULL) %>%
-        dplyr::arrange(datetime)
-    })
-    
-    logger.trace("Create airsensor object")
-
-    logger.trace("meta$monitorID = %s", paste0(meta$monitorID, collapse = ", "))
-    logger.trace("names(data) = %s", paste0(names(data), collapse = ", "))
-
-    # Create an "airsensor" object
-    airsensor <- list(
-      meta = meta, 
-      data = data
-    )
-    class(airsensor) <- c("airsensor", "ws_monitor", "list")
-    
-    logger.trace("Calling PWFSLSmoke::monitor_subset(airsensor)")
-
-    # Guarante that the order of meta and data agree
-    airsensor <- PWFSLSmoke::monitor_subset(airsensor)
-    
-    # Add "airsensor" class back again
-    class(airsensor) <- union("airsensor", class(airsensor))
-    
-    logger.trace("Successfully built the annual airsensor object")
-
-  } # END of file.exists(yearPath)
-  
-  # Save the annual file
-  filename <- paste0("airsensor_", opt$collectionName, "_", yearstamp, ".rda")
-  filepath <- file.path(yearDataDir, filename)
-  
-  logger.info("Writing 'airsensor' data to %s", filename)
-  save(list="airsensor", file = filepath)
-  
-}, silent=TRUE)
-
-# Handle errors
-if ( "try-error" %in% class(result) ) {
-  msg <- paste("Error creating annual airsensor file: ", geterrmessage())
-  logger.fatal(msg)
-} else {
-  # Guarantee that the errorLog exists
-  if ( !file.exists(errorLog) ) 
-    dummy <- file.create(errorLog)
-  logger.info("Completed successfully!")
-}
