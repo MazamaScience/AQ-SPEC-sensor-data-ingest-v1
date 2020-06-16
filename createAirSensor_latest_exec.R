@@ -1,13 +1,14 @@
 #!/usr/local/bin/Rscript
 
 # This Rscript will process archived 'pat' data files into a single 'airsensor'
-# file containing hourly data for all sensors.
+# airsensor_<collection-id>_latest7.rda file containing aggregated hourly pm25
+# data for all sensors.
 #
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor 0.5.16
-VERSION = "0.1.4"
+#  ----- . AirSensor 0.8.x . -----
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -23,6 +24,7 @@ if ( interactive() ) {
   opt <- list(
     archiveBaseDir = file.path(getwd(), "output"),
     logDir = file.path(getwd(), "logs"),
+    countryCode = "US",
     stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
     collectionName = "scaqmd",
@@ -44,6 +46,11 @@ if ( interactive() ) {
       c("-l","--logDir"), 
       default = getwd(), 
       help = "Output directory for generated .log file [default = \"%default\"]"
+    ),
+    optparse::make_option(
+      c("-c","--countryCode"), 
+      default = "US", 
+      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-s","--stateCode"), 
@@ -93,14 +100,14 @@ if ( !dir.exists(opt$logDir) )
 # ----- Set up logging ---------------------------------------------------------
 
 logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_latest_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_latest_DEBUG.log")), 
-  infoLog  = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_latest_INFO.log")),
-  errorLog = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_latest_ERROR.log"))
+  traceLog = file.path(opt$logDir, paste0("createAirSensor_latest_",opt$collectionName,"_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createAirSensor_latest_",opt$collectionName,"_DEBUG.log")), 
+  infoLog  = file.path(opt$logDir, paste0("createAirSensor_latest_",opt$collectionName,"_INFO.log")),
+  errorLog = file.path(opt$logDir, paste0("createAirSensor_latest_",opt$collectionName,"_ERROR.log"))
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_latest_ERROR.log"))
+errorLog <- file.path(opt$logDir, paste0("createAirSensor_latest_",opt$collectionName,"_ERROR.log"))
 
 if ( interactive() ) {
   logger.setLevel(TRACE)
@@ -111,12 +118,10 @@ options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
 logger.info("Running createAirSensor_latest_exec.R version %s",VERSION)
-sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
+optString <- paste(capture.output(str(opt)), collapse = "\n")
+logger.debug("Script options: \n\n%s\n", optString)
+sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
 logger.debug("R session:\n\n%s\n", sessionString)
-
-# Command line options
-optionsString <- paste(capture.output(str(opt)), collapse='\n')
-logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ------ Create AirSensor objects ----------------------------------------------
 
@@ -130,7 +135,7 @@ tryCatch(
     logger.info("Output directory: %s", outputDir)
   }, 
   error = function(e) {
-    msg <- paste('Error creating datetimes ', e)
+    msg <- paste('Error validating output directory: ', e)
     logger.fatal(msg)
     stop(msg)
   }
@@ -141,7 +146,8 @@ tryCatch(
   expr = {
     logger.info('Loading PAS data...')
     pas <- 
-      pas_load() 
+      pas_load() %>%
+      pas_filter(.data$countryCode == opt$countryCode)
   }, 
   error = function(e) {
     msg <- paste('Fatal PAS Load Execution: ', e)
@@ -150,6 +156,10 @@ tryCatch(
   }
 )
 
+# Subset by state if reqeusted
+if ( !is.null(opt$stateCode) )
+  pas <- pas_filter(pas, .data$stateCode == opt$stateCode)
+  
 # Capture Unique IDs
 tryCatch(
   expr = {
@@ -195,7 +205,7 @@ for ( ddID in deviceDeploymentIDs ) {
         )
     }, 
     error = function(e) {
-      logger.warn('Failed: Loading PAT data for %s ', ddID)
+      logger.warn('Unable to load PAT data for %s ', ddID)
       NULL
     }
   )
@@ -223,6 +233,8 @@ tryCatch(
     logger.fatal(msg)
   }
 )
+
 # Guarantee that the errorLog exists
 if ( !file.exists(errorLog) ) dummy <- file.create(errorLog)
 logger.info("Completed successfully!")
+

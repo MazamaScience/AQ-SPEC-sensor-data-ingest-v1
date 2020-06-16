@@ -6,12 +6,11 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor 0.5.16
-VERSION = "0.1.4"
+#  ----- . AirSensor 0.8.x . -----
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
   library(MazamaCoreUtils)
   library(AirSensor)
 })
@@ -71,10 +70,6 @@ if ( opt$version ) {
   quit()
 }
 
-# Command line options
-optionsString <- paste(capture.output(str(opt)), collapse='\n')
-logger.debug('Command line options:\n\n%s\n', optionsString)
-
 # ----- Validate parameters ----------------------------------------------------
 
 if ( dir.exists(opt$archiveBaseDir) ) {
@@ -85,6 +80,28 @@ if ( dir.exists(opt$archiveBaseDir) ) {
 
 if ( !dir.exists(opt$logDir) ) 
   stop(paste0("logDir not found:  ",opt$logDir))
+
+# ----- Set up logging ---------------------------------------------------------
+
+logger.setup(
+  traceLog = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_DEBUG.log")), 
+  infoLog  = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_INFO.log")), 
+  errorLog = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_ERROR.log"))
+)
+
+# For use at the very end
+errorLog <- file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_ERROR.log"))
+
+# Silence other warning messages
+options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
+
+# Start logging
+logger.info("Running createAirSensor_annual_exec.R version %s",VERSION)
+optString <- paste(capture.output(str(opt)), collapse = "\n")
+logger.debug("Script options: \n\n%s\n", optString)
+sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
+logger.debug("R session:\n\n%s\n", sessionString)
 
 # ----- Create datestamps ------------------------------------------------------
 
@@ -106,28 +123,7 @@ logger.trace("Setting up data directories")
 latestDataDir <- paste0(opt$archiveBaseDir, "/airsensor/latest")
 yearDataDir <- paste0(opt$archiveBaseDir, "/airsensor/", yearstamp)
 
-# ----- Set up logging ---------------------------------------------------------
-
-logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_DEBUG.log")), 
-  infoLog  = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_INFO.log")), 
-  errorLog = file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_ERROR.log"))
-)
-
-# For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createAirSensor_annual_",opt$collectionName,"_ERROR.log"))
-
-# Silence other warning messages
-options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
-
-# Start logging
-logger.info("Running createAirSensor_annual_exec.R version %s",VERSION)
-sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
-logger.debug("R session:\n\n%s\n", sessionString)
-
 # ------ Create annual airsensor object ----------------------------------------
-
 
 # Create paths
 tryCatch(
@@ -165,7 +161,7 @@ tryCatch(
      # NOTE:  Don't use PWFSLSmoke::monitor_join(). (ver 1.2.103 has bugs)
      
      # TODO:  We have a basic problem with the pwfsl_closest~ variables.
-     # TODO:  These can change whan a new, temprary monitor gets installed.
+     # TODO:  These can change when a new, temprary monitor gets installed.
      # TODO:  We don't want to have two separate metadata records for a single 
      # TODO:  Sensor as the metadata is supposed to be location-specific and
      # TODO:  not time-dependent. Unfortunately, the location of the nearest
@@ -201,10 +197,14 @@ tryCatch(
      
      logger.trace("Combining metadata")
      
-     # NOTE:  Despite the efforts above, if a sensor has a new *location* there
-     # NOTE:  is nothing we can do to avoid duplicates. So we have to filter for
-     # NOTE:  uniqueness at this point as having duplicate monitorIDs in the 
-     # NOTE:  meta dataframe breaks the data model.
+     # < NOTE:  Despite the efforts above, if a sensor has a new *location* there >
+     # < NOTE:  is nothing we can do to avoid duplicates. So we have to filter for >
+     # < NOTE:  uniqueness at this point as having duplicate monitorIDs in the > 
+     # < NOTE:  meta dataframe breaks the data model. >
+
+     # NOTE:  As of AirSensor 0.8.x, this should no longer be a problem because
+     # NOTE:  the 'monitorID' is a truly unique 'deviceDeploymentID'. But we
+     # NOTE:  leave this here because it doesn't hur anything.
      
      #  Combine meta
      suppressMessages({

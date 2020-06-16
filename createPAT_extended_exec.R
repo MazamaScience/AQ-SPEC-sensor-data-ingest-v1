@@ -1,12 +1,12 @@
 #!/usr/local/bin/Rscript
 
-# This Rscript will ingest pat_~_latest7.rda files and use them to create pat
+# This Rscript will ingest pat_<id>_latest7.rda files and use them to create pat
 # files with extended time ranges: 45-day and monthly.
 #
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.2 . -----
+#  ----- . AirSensor 0.8.x . -----
 VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
@@ -76,10 +76,6 @@ if ( opt$version ) {
   cat(paste0("createPAT_extended_exec.R ",VERSION,"\n"))
   quit()
 }
-
-# Command line options
-optionsString <- paste(capture.output(str(opt)), collapse='\n')
-logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ----- Validate parameters ----------------------------------------------------
 

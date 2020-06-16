@@ -1,0 +1,97 @@
+################################################################################
+#                                                                              #
+# 2019-10-30                                                                   #
+# Example crontab                                                              #
+#                                                                              #
+# Note that arguments to the  ~_exec script will be run inside the docker      #
+# container and refer to the absolute path of directories in that container.   #
+# The '-v' command mounts host machine directories to container directories.   #
+#                                                                              #
+# Note that /home/mazama is found inside the docker image.                     #
+################################################################################
+
+################################################################################
+# NOTES:
+# 
+# All internal times and all file timestamps are in UTC. Conversion to sensor
+# local time occurs during processing of requests and calculation of results.
+#
+# The "pas" (Purple Air Synoptic) files are built from the the geojson files 
+# used to populate the Purple Air map. We use this data solely for sensor 
+# metadata, including the keys needed to access timeseries data. The "pat"
+# generation script depends on the previous generation of a "pas" file.
+#
+################################################################################
+
+# ----- Create "pas" files once per day at 01:02 UTC ---------------------------
+
+02 01 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createPAS_exec.R --archiveBaseDir=/data --logDir=/logs
+
+# ----- Create "pat" latest files once per hour at **:05 UTC -------------------
+
+05 * * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createPAT_latest_exec.R --archiveBaseDir=/data --logDir=/logs
+
+# ----- Create "pat" extended files at **:15 UTC -------------------------------
+
+15 * * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createPAT_extended_exec.R --archiveBaseDir=/data --logDir=/logs
+
+# ----- Create "airsensor" latest files at **:20 UTC minutes -------------------
+
+20 * * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_latest_exec.R --archiveBaseDir=/data --logDir=/logs
+
+# ----- Create "airsensor" extended files at **:35 UTC minutes -----------------
+
+35 * * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_extended_exec.R --archiveBaseDir=/data --logDir=/logs
+
+# ----- Create "airsensor" annual files at 02:02 UTC ---------------------------
+
+02 02 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_annual_exec.R --archiveBaseDir=/data --logDir=/logs
+
+# ----- Create community videos once per day -----------------------------------
+
+  # SCAP --- Alhambra/Monterey Park
+  # SCBB --- Big Bear Lake
+  # SCEM --- El Monte
+  # SCIV --- Imperial Valley
+  # SCNP --- Nipomo
+  # SCPR --- Paso Robles
+  # SCSJ --- San Jacinto
+  # SCSB --- Seal Beach
+  # SCAH --- SCAH
+  # SCAN --- SCAN
+  # SCUV --- SCUV
+  # SCSG --- South Gate
+  # SCHS --- Sycamore Canyon
+  # SCTV --- Temescal Valley
+
+00 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAP
+
+05 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCBB
+
+10 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCEM
+
+15 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCIV
+
+20 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCNP
+
+25 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCPR
+
+30 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSJ
+
+35 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSB
+
+40 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAH
+
+45 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAN
+
+50 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCUV
+
+55 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSG
+
+57 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCHS
+
+15 03 * * *    docker run --rm -v __EXEC_DIR__:/app -v __ARCHIVE_BASE_DIR__:/data -v __ARCHIVE_BASE_DIR__/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCTV
+
+
+
+

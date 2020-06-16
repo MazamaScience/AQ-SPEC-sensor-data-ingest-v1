@@ -1,17 +1,16 @@
 #!/usr/local/bin/Rscript
 
-# This Rscript will ingest airsensor_~_latest7.rda files and use them to create
-# airsensor files with extended time ranges: 45-day and monthly.
+# This Rscript will ingest airsensor_<id>_latest7.rda files and use them to
+# creaate airsensor files with extended time ranges: 45-day and monthly.
 #
 # See test/Makefile for testing options
 #
 
-#  ----- . ----- . AirSensor 0.5.16
-VERSION = "0.1.4"
+#  ----- . AirSensor 0.8.x . -----
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
   library(MazamaCoreUtils)
   library(AirSensor)
 })
@@ -79,26 +78,28 @@ if ( !dir.exists(opt$logDir) )
 # ----- Set up logging ---------------------------------------------------------
 
 logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_extended_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_extended_DEBUG.log")), 
-  infoLog  = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_extended_INFO.log")), 
-  errorLog = file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_extended_ERROR.log"))
+  traceLog = file.path(opt$logDir, paste0("createAirSensor_extended_",opt$collectionName,"_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createAirSensor_extended_",opt$collectionName,"_DEBUG.log")), 
+  infoLog  = file.path(opt$logDir, paste0("createAirSensor_extended_",opt$collectionName,"_INFO.log")), 
+  errorLog = file.path(opt$logDir, paste0("createAirSensor_extended_",opt$collectionName,"_ERROR.log"))
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createAirSensor_",opt$collectionName,"_extended_ERROR.log"))
+errorLog <- file.path(opt$logDir, paste0("createAirSensor_extended_",opt$collectionName,"_ERROR.log"))
+
+if ( interactive() ) {
+  logger.setLevel(TRACE)
+}
 
 # Silence other warning messages
 options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
 logger.info("Running createAirSensor_extended_exec.R version %s",VERSION)
-sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
+optString <- paste(capture.output(str(opt)), collapse = "\n")
+logger.debug("Script options: \n\n%s\n", optString)
+sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
 logger.debug("R session:\n\n%s\n", sessionString)
-
-# Command line options
-optionsString <- paste(capture.output(str(opt)), collapse='\n')
-logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ------ Get labels ------------------------------------------------------------
 

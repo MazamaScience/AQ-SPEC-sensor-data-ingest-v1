@@ -1,11 +1,12 @@
 #!/usr/local/bin/Rscript
 
-# This Rscript will download a month's worth timeseries data from Purple Air.
+# This Rscript will download a month's worth timeseries data from ThingSpeak and
+# use it to create pat_<id>_<monthstamp>.rda files.
 #
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.2 . -----
+#  ----- . AirSensor 0.8.x . -----
 VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo

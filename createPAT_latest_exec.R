@@ -1,6 +1,7 @@
 #!/usr/local/bin/Rscript
 
-# This Rscript will download the latest timeseries data from Purple Air.
+# This Rscript will download the latest timeseries data from ThingSpeak and
+# and use it to create pat_<id>_latest7.rda files.
 #
 # See test/Makefile for testing options
 #
@@ -74,10 +75,6 @@ if ( opt$version ) {
   cat(paste0("createPAT_latest_exec.R ",VERSION,"\n"))
   quit()
 }
-
-# Command line options
-optionsString <- paste(capture.output(str(opt)), collapse='\n')
-logger.debug('Command line options:\n\n%s\n', optionsString)
 
 # ----- Validate parameters ----------------------------------------------------
 

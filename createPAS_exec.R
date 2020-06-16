@@ -5,8 +5,8 @@
 # See test/Makefile for testing options
 #
 
-#  ---- . AirSensor 0.7.x . ----
-VERSION = "0.2.2"
+#  ---- . AirSensor 0.8.x . ----
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
