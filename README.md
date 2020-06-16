@@ -1,6 +1,6 @@
 # Sensor Data Ingest
 
-**_Updated 2020-04-18_**
+**_Updated 2020-06-16_**
 
 Scripts in this repository do all the work of converting raw data from Purple
 Air sensors into .rda files ready for use with the **AirSensor** R package.
@@ -9,7 +9,7 @@ Data can be accesed in R with:
 
 ```
 library(AirSensor)
-setArchiveBaseUrl("https://airfire-data-exports.s3-us-west-2.amazonaws.com/PurpleAir/v1")
+setArchiveBaseUrl("http://data.mazamascience.com/PurpleAir/v1")
 ```
 
 ## Installation Instructions for an Operational Site
@@ -26,16 +26,13 @@ containers. This level of virtualization allows containers and scripts to be
 loaded onto a system that has none of the other software dependencies required
 to run R.
 
-The package source code incluces a `docker/Makefile` with targets and 
+This repository incluces a `docker/Makefile` with targets and 
 dependencies to simplify building a docker image.
-
-The docker image with the tag `mazamascience/airsensor:latest` must exist on
-the host machine in order to run the data ingest scripts described below.
 
 You can review current `airsensor` docker images with:
 
 ```
-docker images | grep airsensor
+docker images | grep "mazamascience/airsensor"
 ```
 
 ### Web accessible directories
@@ -46,12 +43,12 @@ Apache can serve GET requests for data files.
 
 An example base directory might be:
 
-/data/PurpleAir/
+/var/www/data.mazamascience.com/html/PurpleAir/v1
 
 ### Cron jobs
 
 Each of the `~_exec.R` scripts is run on a daily schedule defined by
-`crontab_daily.txt`.
+`crontab_etc/crontab_daily.txt`.
 
 _Note that all crontab entries must be on a single line. No line continuation
 characters are allowed._
@@ -73,7 +70,6 @@ This directory hasthe following contents:
 ```
 ├── Makefile
 ├── README.md
-├── __crontab_daily.txt
 ├── createAirSensor_annual_exec.R
 ├── createAirSensor_extended_exec.R
 ├── createAirSensor_latest_exec.R
@@ -82,12 +78,16 @@ This directory hasthe following contents:
 ├── createPAT_latest_exec.R
 ├── createPAT_monthly_exec.R
 ├── createVideo_exec.R
-├── crontab_PAT_monthlyArchive_joule.txt
-├── crontab_daily_joule.txt
+├── crontabs_etc
+│   ├── __crontab_daily.txt
+│   ├── crontab_PAT_monthlyArchive_joule.txt
+│   ├── crontab_daily_joule.txt
+│   └── upgrade_joule.txt
 ├── docker
 │   └── Makefile
-└── test
-    └── Makefile
+├── test
+│   └── Makefile
+└── upgradePAS_exec.R
 ```
 
 Each of the `~_exec.R` scripts is run on a daily schedule defined by
@@ -108,11 +108,8 @@ following directory structure will be available  at some web accessible
 `archiveBaseDir` or `archiveBasUrl`:
 
 ```
-├── SoH
-│   ├── 2019
-│   ├── 2020
-│   └── latest
 ├── airsensor
+│   ├── 2017
 │   ├── 2018
 │   ├── 2019
 │   ├── 2020
@@ -121,6 +118,8 @@ following directory structure will be available  at some web accessible
 │   ├── 2019
 │   └── 2020
 └── pat
+    ├── 2017
+    ├── 2018
     ├── 2019
     ├── 2020
     └── latest
@@ -138,7 +137,7 @@ Log files contain the name of the processing script. Four different levels
 of logging are provided:
 
  * `ERROR` -- Something went wrong, sometimes resulting in no generation of an output file.
- * `INFO` -- Summary information on data processed along with any warnings generated.
+ * `INFO`  -- Summary information on data processed along with any warnings generated.
  * `DEBUG` -- Detailed processing information to help understand where processing might have gone wrong.
  * `TRACE` -- *Excruciatingly* detailed processing information including URL requests.
 
@@ -149,7 +148,7 @@ generating the failure.
 ### Testing
 
 The `test/` directory contains a `Makefile` with targets that will run
-executable scripts using `mazamascience/airsensor:latest` docker image. All
+executable scripts using the `mazamascience/airsensor:latest` docker image. All
 output and log files will be generated in `output/` and `logs/` directories
 that can be removed with the `clean` target.
 
