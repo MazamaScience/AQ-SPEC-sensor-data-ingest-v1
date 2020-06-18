@@ -179,7 +179,7 @@ tryCatch(
 # Create directory if it doesn't exist
 tryCatch(
   expr = {
-    outputDir <- file.path(opt$archiveBaseDir, "airsensor", yearstamp, '/', mmstamp)
+    outputDir <- file.path(opt$archiveBaseDir, "airsensor", yearstamp)
     if ( !dir.exists(outputDir) ) {
       dir.create(outputDir, recursive = TRUE)
     }
