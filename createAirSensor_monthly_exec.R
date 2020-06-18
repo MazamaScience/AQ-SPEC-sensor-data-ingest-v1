@@ -1,13 +1,14 @@
 #!/usr/local/bin/Rscript
 
-# This Rscript will convert a month's worth timeseries data from ThingSpeak and
-# use it to create airsensor_<id>_<monthstamp>.rda files.
+# This Rscript will process archived 'pat' data files into a single 'airsensor'
+# airsensor_<collection-id>_<monthstamp>.rda file containing houlry aggregated
+# pm25 data for all sensors.
 #
 # See test/Makefile for testing options
 #
 
 #  ----- . AirSensor 0.8.x . -----
-VERSION = "0.0.0"
+VERSION = "0.2.5"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -25,8 +26,9 @@ if ( interactive() ) {
     logDir = file.path(getwd(), "logs"),
     countryCode = "US",
     stateCode = "CA",
-    pattern = "^[Ss][Cc].._..$",
-    datestamp = "201909",
+    pattern = "^SCNP_..",
+    collectionName = "scaqmd",
+    datestamp = "201904",
     version = FALSE
   )
   
@@ -60,21 +62,26 @@ if ( interactive() ) {
       help = "String pattern passed to stringr::str_detect [default = \"%default\"]"
     ),
     optparse::make_option(
+      c("-n","--collectionName"), 
+      default = "scaqmd", 
+      help = "Name associated with this collection of sensors [default = \"%default\"]"
+    ),
+    optparse::make_option(
       c("-d","--datestamp"),
       default = "201907",
       help = "Datestamp specifying the year and month as YYYYMM [default = current month]"
     ),
     optparse::make_option(
       c("-V","--version"),
-      action="store_true",
+      action = "store_true",
       default = FALSE,
       help = "Print out version number [default = \"%default\"]"
     )
   )
   
   # Parse arguments
-  opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
-
+  opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
+  
 }
 
 # Print out version and quit
@@ -113,14 +120,8 @@ mmstamp <- stringr::str_sub(monthstamp, 5, 6)
 
 # ----- Set up logging ---------------------------------------------------------
 
-# Assign region ID to SCAQMD
-regionID <- 'SCAQMD'
-# if ( is.null(opt$stateCode) ) {
-#   regionID <- opt$countryCode
-# } else {
-#   regionID <- paste0(opt$countryCode, ".", opt$stateCode)
-# }
-
+# Assign the regionID
+regionID <- opt$collectionName
 
 logger.setup(
   traceLog = file.path(opt$logDir, paste0("createAirSensor_monthly_",regionID,"_",monthstamp,"_TRACE.log")),
@@ -231,79 +232,72 @@ tryCatch(
 
 # ------ Create AirSensor objects ----------------------------------------------
 
-# Load pat AND convert to airsensors
+# Init counts
+successCount <- 0
+count <- 0
+
+dataList <- list()
+
+for ( deviceDeploymentID in deviceDeploymentIDs ) {
+  
+  count <- count + 1
+  
+  # Debug info
+  logger.debug(
+    "%4d/%d pat_createAirSensor('%s')",
+    count,
+    length(deviceDeploymentIDs),
+    deviceDeploymentID
+  )
+  
+  # Load the pat data, convert to an airsensor and add to dataList
+  dataList[[deviceDeploymentID]] <- tryCatch(
+    expr = {
+      airsensor <- pat_load(
+        id = deviceDeploymentID,
+        label = NULL,
+        pas = pas,
+        startdate = startdate,
+        enddate = enddate,
+        timezone = "UTC",
+      ) %>%
+        pat_createAirSensor(
+          FUN = AirSensor::PurpleAirQC_hourly_AB_02
+        )
+    }, 
+    error = function(e) {
+      logger.warn('Unable to load PAT data for %s ', deviceDeploymentID)
+      NULL
+    }
+    
+    # Keep going in the face of errors
+  )
+  
+} # END of deviceDeploymentIDs loop
+
+# Combine the airsensors into a single ws_monitor opbject and save
 tryCatch(
   expr = {
-    # AirSensor Aggregation FUN def 
-    FUN = AirSensor::PurpleAirQC_hourly_AB_02
+    logger.info('Combining airsensors...')
     
-    # Init counts
-    successCount <- 0
-    count <- 0
-    for ( deviceDeploymentID in deviceDeploymentIDs ) {
-      # ++ count
-      count <- count + 1
-      
-      # Load the PAT object and convert to airsensor
-      tryCatch(
-        expr = {
-          logger.debug(
-            "%4d/%d pat_createAirSensor with %s pat data.",
-            count,
-            length(deviceDeploymentIDs),
-            deviceDeploymentID
-          )
-          
-          # Load via the db, either local or remote URL 
-          airsensor <- pat_load(
-            id = deviceDeploymentID,
-            label = NULL,
-            pas = pas,
-            startdate = startdate,
-            enddate = enddate,
-            timezone = "UTC",
-          ) %>%
-            pat_createAirSensor(
-              FUN = FUN
-            )
-          
-          filename <- paste0("airsensor_", deviceDeploymentID, "_", monthstamp, ".rda")
-          tryCatch(
-            expr = {
-              filepath <- file.path(outputDir, filename)
-              logger.trace("Writing airsensor data to %s", filename)
-              save(airsensor, file = filepath)
-            },
-            error = function(e) {
-              # NOTE: Throwing a `stop` here will yield a warning to the
-              # NOTE: enclosing tryCatch
-              msg <- paste('Failed to write ', filename, ': ', e)
-              logger.fatal(msg)
-              stop(msg)
-            }
-          )
-          # Count if no errors occur
-          successCount <- successCount + 1
-        },
-        error = function(e) {
-          # Log the failed PAT load and move on
-          logger.warn(e)
-        }
-      )
-    }
+    airsensor <- PWFSLSmoke::monitor_combine(dataList)
+    class(airsensor) <- c("airsensor", "ws_monitor", "list")
     
-  },
+    logger.info('Combined successfully...')
+    
+    filename <- paste0("airsensor_", opt$collectionName, "_", monthstamp, ".rda")
+    filepath <- file.path(outputDir, filename)
+    
+    save(list = "airsensor", file = filepath)
+    logger.info("Saved: %s", filename)
+  }, 
   error = function(e) {
-    msg <- paste("Error creating monthly airsensor file: ", e)
+    msg <- paste("Error creating monthly AirSensor file: ", e)
     logger.fatal(msg)
-  },
-  finally = {
-    # End Log info
-    logger.info("%d monthly airsensor files were generated.", successCount)
-    logger.info("Done.")
-    # Guarantee that the errorLog exists
-    if ( !file.exists(errorLog) ) {
-      dummy <- file.create(errorLog)
-    }
   }
 )
+
+# Guarantee that the errorLog exists
+if ( !file.exists(errorLog) ) dummy <- file.create(errorLog)
+logger.info("Completed successfully!")
+

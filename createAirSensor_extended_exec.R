@@ -1,7 +1,7 @@
 #!/usr/local/bin/Rscript
 
 # This Rscript will ingest airsensor_<id>_latest7.rda files and use them to
-# creaate airsensor files with extended time ranges: 45-day and monthly.
+# create airsensor files with extended time ranges: 45-day and monthly.
 #
 # See test/Makefile for testing options
 #

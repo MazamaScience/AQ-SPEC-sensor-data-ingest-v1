@@ -1,7 +1,7 @@
 #!/usr/local/bin/Rscript
 
 # This Rscript will process archived 'pat' data files into a single 'airsensor'
-# airsensor_<collection-id>_latest7.rda file containing aggregated hourly pm25
+# airsensor_<collection-id>_latest7.rda file containing hourly aggregated pm25
 # data for all sensors.
 #
 # See test/Makefile for testing options
@@ -69,14 +69,14 @@ if ( interactive() ) {
     ),
     optparse::make_option(
       c("-V","--version"), 
-      action="store_true", 
+      action = "store_true", 
       default = FALSE, 
       help = "Print out version number [default = \"%default\"]"
     )
   )
   
   # Parse arguments
-  opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
+  opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
   
 }
 
@@ -187,7 +187,9 @@ count <- 0
 dataList <- list()
 
 for ( ddID in deviceDeploymentIDs ) {
+  
   count <- count + 1
+  
   # Debug info
   logger.debug(
     "%4d/%d pat_createAirSensor(id = '%s')",
@@ -209,6 +211,7 @@ for ( ddID in deviceDeploymentIDs ) {
       NULL
     }
   )
+  
 }
 
 
