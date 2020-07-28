@@ -4,5 +4,5 @@
 # PRODUCTION version -----------------------------------------------------------
 
 production_build:
-	docker pull mazamascience/airsensor:0.9.7
-	docker tag mazamascience/airsensor:0.9.7 mazamascience/airsensor:latest
+	docker pull mazamascience/airsensor:0.9.8
+	docker tag mazamascience/airsensor:0.9.8 mazamascience/airsensor:latest
