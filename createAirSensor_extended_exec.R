@@ -47,14 +47,14 @@ if ( interactive() ) {
     ),
     optparse::make_option(
       c("-V","--version"), 
-      action="store_true", 
+      action = "store_true", 
       default = FALSE, 
       help = "Print out version number [default = \"%default\"]"
     )
   )
   
   # Parse arguments
-  opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
+  opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
   
 }
 
@@ -92,7 +92,7 @@ if ( interactive() ) {
 }
 
 # Silence other warning messages
-options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
+options(warn = -1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
 logger.info("Running createAirSensor_extended_exec.R version %s",VERSION)
@@ -209,7 +209,7 @@ tryCatch(
         
         logger.trace("Update and save %s", cur_monthPath)
         
-        save(list="airsensor", file = cur_monthPath)
+        save(list = "airsensor", file = cur_monthPath)
       }, 
       error = function(e) {
         # Catch errors up one level 
