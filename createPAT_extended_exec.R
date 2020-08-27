@@ -279,7 +279,7 @@ tryCatch(
             latest45$meta$pwfsl_closestDistance <- latest7$meta$pwfsl_closestDistance
             
             # Join
-            pat_full <- AirSensor::pat_join(latest45, latest7)
+            pat_full <- pat_join(latest45, latest7)
             
           }
 

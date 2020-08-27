@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . minor restructure
-VERSION = "0.2.6"
+#  ----- . AirSensor 0.9.x . sensor_filterDatetime()
+VERSION = "0.2.7"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -188,12 +188,14 @@ tryCatch(
     # Save latest 45 sensor data
     tryCatch(
       expr = {
-        # Update the latest45 file
         airsensor <- 
           airsensor_full %>%
-          PWFSLSmoke::monitor_subset(tlim = c(now_m45, now))
-        # TODO:  Should have sensor_filterDatetime() function
-        
+          sensor_filterDatetime(
+            startdate = now_m45, 
+            enddate = now,
+            timezone = timezone 
+          )
+
         logger.trace("Update and save %s", latest45Path)
         
         save(list = "airsensor", file = latest45Path)
@@ -207,13 +209,12 @@ tryCatch(
     # Save current month data
     tryCatch(
       expr = {
-        # Update the current month file
         airsensor <- 
           airsensor_full %>%
           sensor_filterDate(
             startdate = cur_monthStart, 
             enddate = cur_monthEnd,
-            timezone = "UTC"
+            timezone = timezone
           )
         
         logger.trace("Update and save %s", cur_monthPath)
@@ -233,18 +234,33 @@ tryCatch(
   }
 )
 
-if ( lubridate::day(now) < 7 ) {
-  logger.trace("Update and save %s", prev_monthPath)
-  airsensor <- 
-    airsensor_full %>%
-    sensor_filterDate(
-      startdate = prev_monthStart, 
-      enddate = prev_monthEnd,
-      timezone = "UTC"
-    )
+# Save previous month
 
-  save(list = "airsensor", file = prev_monthPath)
-}
+# ------ Create 45-day airsensor objects ---------------------------------------
+
+tryCatch(
+  expr = {
+    
+    if ( lubridate::day(now) < 7 ) {
+      logger.trace("Update and save %s", prev_monthPath)
+      airsensor <- 
+        airsensor_full %>%
+        sensor_filterDate(
+          startdate = prev_monthStart, 
+          enddate = prev_monthEnd,
+          timezone = "UTC"
+        )
+      
+      save(list = "airsensor", file = prev_monthPath)
+    }
+ 
+  }, 
+  error = function(e) {
+    msg <- paste("Error creating previous month file: ", e)
+    logger.warn(msg)
+  }
+)
+
 
 # Guarantee that the errorLog exists
 if ( !file.exists(errorLog) ) dummy <- file.create(errorLog)

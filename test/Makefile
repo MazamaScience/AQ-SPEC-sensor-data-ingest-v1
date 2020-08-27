@@ -67,6 +67,10 @@ show_output:
 	echo ""
 	cd $(BASE_PATH)/output; find `pwd`
 
+latest_test_suite: clean setup createPAS createPAT_latest createPAT_extended createAirSensor_latest createAirSensor_extended
+	echo ""
+	cd $(BASE_PATH)/output; find `pwd`
+
 full_test_suite: clean setup createPAS createPAT_latest createPAT_extended createPAT_201904 createPAT_201710 createAirSensor_latest createAirSensor_extended
 	echo ""
 	cd $(BASE_PATH)/output; find `pwd`
