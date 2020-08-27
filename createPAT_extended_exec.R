@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.x . -----
-VERSION = "0.2.5"
+#  ----- . AirSensor 0.9.x . minor restructure
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -22,8 +22,8 @@ if ( interactive() ) {
   # RStudio session
   # NOTE: Remeber to set the working directory for logging with setwd()
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
-    logDir = file.path(getwd(), "logs"),
+    archiveBaseDir = file.path(getwd(), "test/output"),
+    logDir = file.path(getwd(), "test/logs"),
     countryCode = "US",
     stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
@@ -130,6 +130,9 @@ tryCatch(
     # All datestamps are UTC
     timezone <- "UTC"
 
+    # NOTE:  Always extend month boundaries by one UTC day on each end to make 
+    # NOTE:  sure we have complete days in any local time.
+    
     # Get dates and date stamps
     now <- lubridate::now(tzone = timezone)
     now_m45 <- now - lubridate::ddays(45)
@@ -251,32 +254,36 @@ tryCatch(
             next
           }
 
-          # Load latest45 from path
-          if ( file.exists(latest45Path) ) {
-            latest45 <- get(load(latest45Path))
-          } else {
-            latest45 <- latest7 # default when starting from scratch
-          }
-
           logger.trace(
             "%4d/%d Updating %s",
             count,
             length(deviceDeploymentIDs),
             latest45Path
           )
+          
+          # Load latest45 from path
+          if ( !file.exists(latest45Path) ) {
+            
+            pat_full <- latest7 # default when starting from scratch
+            
+          } else {
+            
+            latest45 <- get(load(latest45Path))
+            
+            # NOTE:  PWFSL monitors may come and go so the pwfsl_closest~ data might
+            # NOTE:  be different in latest7 and latest45. We update the latest45
+            # NOTE:  record to always use the latest7$pwfsl_closest~ data so that
+            # NOTE:  pat_join() doesn't fail with:
+            # NOTE:    "`pat` objects must be of the same monitor"
+            latest45$meta$pwfsl_closestMonitorID <- latest7$meta$pwfsl_closestMonitorID
+            latest45$meta$pwfsl_closestDistance <- latest7$meta$pwfsl_closestDistance
+            
+            # Join
+            pat_full <- AirSensor::pat_join(latest45, latest7)
+            
+          }
 
-          # NOTE:  PWFSL monitors may come and go so the pwfsl_closest~ data might
-          # NOTE:  be different in latest7 and latest45. We update the latest45
-          # NOTE:  record to always use the latest7$pwfsl_closest~ data so that
-          # NOTE:  pat_join() doesn't fail with:
-          # NOTE:    "`pat` objects must be of the same monitor"
-          latest45$meta$pwfsl_closestMonitorID <- latest7$meta$pwfsl_closestMonitorID
-          latest45$meta$pwfsl_closestDistance <- latest7$meta$pwfsl_closestDistance
-
-          # Join
-          pat_full <- AirSensor::pat_join(latest45, latest7)
-
-          # Update the latest45 file
+          # Update the latest45 file (trimmed to day boundaries)
           pat <-
             pat_full %>%
             pat_filterDate(now_m45, now, timezone = latest7$meta$timezone[1])

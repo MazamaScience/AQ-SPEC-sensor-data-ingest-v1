@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.x . -----
-VERSION = "0.2.5"
+#  ----- . AirSensor 0.9.x . minor refactoring
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -21,8 +21,8 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
-    logDir = file.path(getwd(), "logs"),
+    archiveBaseDir = file.path(getwd(), "test/output"),
+    logDir = file.path(getwd(), "test/logs"),
     collectionName = "scaqmd",
     version = FALSE
   )  
@@ -123,9 +123,7 @@ tryCatch(
     
     latest7Path <- file.path(latestDataDir, paste0("airsensor_", opt$collectionName, "_latest7.rda"))
     yearPath <- file.path(yearDataDir, paste0("airsensor_", opt$collectionName, "_", yearstamp, ".rda"))
-    # cur_monthPath <- file.path(cur_monthlyDir, paste0("airsensor_", opt$collectionName, "_", cur_monthStamp, ".rda"))
-    # prev_monthPath <- file.path(prev_monthlyDir, paste0("airsensor_", opt$collectionName, "_", prev_monthStamp, ".rda"))
-    
+
     logger.trace("Loading %s", latest7Path)
     
     # Load latest7
@@ -149,8 +147,6 @@ tryCatch(
 tryCatch(
   expr = {
     if ( file.exists(yearPath) ) {
-      
-      # NOTE:  Don't use PWFSLSmoke::monitor_join(). (ver 1.2.103 has bugs)
       
       # TODO:  We have a basic problem with the pwfsl_closest~ variables.
       # TODO:  These can change when a new, temprary monitor gets installed.
@@ -196,7 +192,7 @@ tryCatch(
       
       # NOTE:  As of AirSensor 0.8.x, this should no longer be a problem because
       # NOTE:  the 'monitorID' is a truly unique 'deviceDeploymentID'. But we
-      # NOTE:  leave this here because it doesn't hur anything.
+      # NOTE:  leave this here because it doesn't hurt anything.
       
       #  Combine meta
       suppressMessages({

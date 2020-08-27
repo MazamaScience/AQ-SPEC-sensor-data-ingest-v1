@@ -7,8 +7,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.x . -----
-VERSION = "0.2.5"
+#  ----- . AirSensor 0.9.x . minor refactor
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -150,10 +150,10 @@ logger.debug("R session:\n\n%s\n", sessionString)
 
 # ------ Get timestamps --------------------------------------------------------
 
-# Get times that extend one day earlier and one day later to ensure we get
-# have a least a full month, regardless of timezone. This overlap is OK
-# because the pat_join() function uses pat_distinct() to remove duplicate
-# records.
+# NOTE:  Get times that extend one day earlier and one day later to ensure we get
+# NOTE:  have a least a full month, regardless of timezone. This overlap is OK
+# NOTE:  because the pat_join() function uses pat_distinct() to remove duplicate
+# NOTE:  records.
 
 tryCatch(
   expr = {
@@ -259,10 +259,10 @@ for ( deviceDeploymentID in deviceDeploymentIDs ) {
         pas = pas,
         startdate = startdate,
         enddate = enddate,
-        timezone = "UTC",
+        timezone = "UTC"
       ) %>%
         pat_createAirSensor(
-          FUN = AirSensor::PurpleAirQC_hourly_AB_02
+          FUN = AirSensor::PurpleAirQC_hourly_AB_01
         )
     }, 
     error = function(e) {

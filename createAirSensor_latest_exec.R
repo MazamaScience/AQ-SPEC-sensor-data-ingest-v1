@@ -7,8 +7,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.x . -----
-VERSION = "0.2.5"
+#  ----- . AirSensor 0.9.x . minor refactor
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -22,8 +22,8 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
-    logDir = file.path(getwd(), "logs"),
+    archiveBaseDir = file.path(getwd(), "test/output"),
+    logDir = file.path(getwd(), "test/logs"),
     countryCode = "US",
     stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
@@ -114,7 +114,7 @@ if ( interactive() ) {
 }
 
 # Silence other warning messages
-options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
+options(warn = -1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
 logger.info("Running createAirSensor_latest_exec.R version %s",VERSION)
@@ -186,7 +186,7 @@ count <- 0
 
 dataList <- list()
 
-for ( ddID in deviceDeploymentIDs ) {
+for ( deviceDeploymentID in deviceDeploymentIDs ) {
   
   count <- count + 1
   
@@ -195,19 +195,19 @@ for ( ddID in deviceDeploymentIDs ) {
     "%4d/%d pat_createAirSensor(id = '%s')",
     count,
     length(deviceDeploymentIDs),
-    ddID
+    deviceDeploymentID
   )
   
   # Load the pat data, convert to an airsensor and add to dataList
-  dataList[[ddID]] <- tryCatch(
+  dataList[[deviceDeploymentID]] <- tryCatch(
     expr = {
-      pat_loadLatest(id = ddID) %>% 
+      pat_loadLatest(id = deviceDeploymentID) %>% 
         pat_createAirSensor(
-          FUN = AirSensor::PurpleAirQC_hourly_AB_02
+          FUN = AirSensor::PurpleAirQC_hourly_AB_01
         )
     }, 
     error = function(e) {
-      logger.warn('Unable to load PAT data for %s ', ddID)
+      logger.warn('Unable to load PAT data for %s ', deviceDeploymentID)
       NULL
     }
   )
@@ -228,7 +228,7 @@ tryCatch(
     filename <- paste0("airsensor_", opt$collectionName, "_latest7.rda")
     filepath <- file.path(outputDir, filename)
     
-    save(list="airsensor", file = filepath)
+    save(list = "airsensor", file = filepath)
     logger.info("Saved: %s", filename)
   }, 
   error = function(e) {

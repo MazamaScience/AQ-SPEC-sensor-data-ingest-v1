@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.x . -----
-VERSION = "0.2.5"
+#  ----- . AirSensor 0.9.x . minor restructure
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -21,8 +21,8 @@ if ( interactive() ) {
 
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
-    logDir = file.path(getwd(), "logs"),
+    archiveBaseDir = file.path(getwd(), "test/output"),
+    logDir = file.path(getwd(), "test/logs"),
     countryCode = "US",
     stateCode = "CA",
     pattern = "^[Ss][Cc].._..$",
@@ -66,14 +66,14 @@ if ( interactive() ) {
     ),
     optparse::make_option(
       c("-V","--version"),
-      action="store_true",
+      action = "store_true",
       default = FALSE,
       help = "Print out version number [default = \"%default\"]"
     )
   )
 
   # Parse arguments
-  opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
+  opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
 
 }
@@ -150,10 +150,10 @@ logger.debug("R session:\n\n%s\n", sessionString)
 
 # ------ Get timestamps --------------------------------------------------------
 
-# Get times that extend one day earlier and one day later to ensure we get
-# have a least a full month, regardless of timezone. This overlap is OK
-# because the pat_join() function uses pat_distinct() to remove duplicate
-# records.
+# NOTE:  Get times that extend one day earlier and one day later to ensure we get
+# NOTE:  have a least a full month, regardless of timezone. This overlap is OK
+# NOTE:  because the pat_join() function uses pat_distinct() to remove duplicate
+# NOTE:  records.
 
 tryCatch(
   expr = {
@@ -246,7 +246,7 @@ tryCatch(
       tryCatch(
         expr = {
           logger.debug(
-            "%4d/%d pat_createNew(id = '%s', label = NULL, pas = pas, '%s', '%s')",
+            "%4d/%d pat_createNew(id = '%s', label = NULL, pas = pas, startdate = '%s', enddate = '%s')",
             count,
             length(deviceDeploymentIDs),
             deviceDeploymentID,

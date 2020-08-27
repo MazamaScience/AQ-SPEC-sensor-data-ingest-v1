@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.8.x . -----
-VERSION = "0.2.5"
+#  ----- . AirSensor 0.9.x . minor restructure
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -21,8 +21,8 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
-    logDir = file.path(getwd(), "logs"),
+    archiveBaseDir = file.path(getwd(), "test/output"),
+    logDir = file.path(getwd(), "test/logs"),
     collectionName = "scaqmd",
     version = FALSE
   )  
@@ -165,6 +165,7 @@ tryCatch(
     
     # Combine latest7 and latest45
     if ( file.exists(latest45Path) ) {
+      
       logger.trace("Loading %s", latest45Path)
       latest45 <- get(load(latest45Path))
       logger.trace("Joining latest7 and latest45")
@@ -172,13 +173,16 @@ tryCatch(
       logger.trace("monitorIDs = %s", paste0(monitorIDs, collapse = ", "))
       # Handle erros by just defaulting to latest7
       result <- try({
-        airsensor_full <- PWFSLSmoke::monitor_join(latest45, latest7, monitorIDs) 
+        airsensor_full <- sensor_join(latest45, latest7) 
       }, silent = TRUE)
       if ( "try-error" %in% class(result) ) {
         airsensor_full <- latest7
       }
+      
     } else {
+      
       airsensor_full <- latest7 # default when starting from scratch
+      
     }
     
     # Save latest 45 sensor data
@@ -188,10 +192,11 @@ tryCatch(
         airsensor <- 
           airsensor_full %>%
           PWFSLSmoke::monitor_subset(tlim = c(now_m45, now))
+        # TODO:  Should have sensor_filterDatetime() function
         
         logger.trace("Update and save %s", latest45Path)
         
-        save(list="airsensor", file = latest45Path)
+        save(list = "airsensor", file = latest45Path)
       }, 
       error = function(e) {
         # Catch errors one level up 
@@ -205,7 +210,11 @@ tryCatch(
         # Update the current month file
         airsensor <- 
           airsensor_full %>%
-          PWFSLSmoke::monitor_subset(tlim = c(cur_monthStart, cur_monthEnd))
+          sensor_filterDate(
+            startdate = cur_monthStart, 
+            enddate = cur_monthEnd,
+            timezone = "UTC"
+          )
         
         logger.trace("Update and save %s", cur_monthPath)
         
@@ -228,9 +237,13 @@ if ( lubridate::day(now) < 7 ) {
   logger.trace("Update and save %s", prev_monthPath)
   airsensor <- 
     airsensor_full %>%
-    PWFSLSmoke::monitor_subset(tlim = c(prev_monthStart, prev_monthEnd))
-  
-  save(list="airsensor", file = prev_monthPath)
+    sensor_filterDate(
+      startdate = prev_monthStart, 
+      enddate = prev_monthEnd,
+      timezone = "UTC"
+    )
+
+  save(list = "airsensor", file = prev_monthPath)
 }
 
 # Guarantee that the errorLog exists
