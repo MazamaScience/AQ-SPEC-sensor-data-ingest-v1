@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . minor restructure
-VERSION = "0.2.6"
+#  ----- . AirSensor 0.9.x . use 2019 pas object
+VERSION = "0.2.7"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -21,12 +21,12 @@ if ( interactive() ) {
 
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "test/output"),
+    archiveBaseDir = file.path(getwd(), "test/data"),
     logDir = file.path(getwd(), "test/logs"),
     countryCode = "US",
     stateCode = "CA",
-    pattern = "^[Ss][Cc].._..$",
-    datestamp = "201909",
+    pattern = "^[Ss][Cc][Ss][Bb]_..$",
+    datestamp = "201710",
     version = FALSE
   )
 
@@ -197,11 +197,29 @@ tryCatch(
 # Load PAS object
 tryCatch(
   expr = {
+
     logger.info('Loading PAS data ...')
+
+    # Create a 'pas' object for all current and historical SCAQMD sensors
+    pas_old <- pas_load(datestamp = "20191001", archival = TRUE)
+    pas_latest <- pas_load(archival = TRUE) 
+
+    # Handle any improper typing
+    pas_old$deviceID <- as.character(pas_old$deviceID)
+    pas_latest$deviceID <- as.character(pas_latest$deviceID)
+
+    # NOTE:  Determine distinct records by using both the channel-specific ID
+    # NOTE:  and the locationID. If the sensor moves, we will get a new
+    # NOTE:  locationID and keep those records. Otherwise we retain the A- and
+    # NOTE:  B-channels but remove any subsequent records from pat_latest that
+    # NOTE:  have the same sensor in the same location.
+    
     pas <- 
-      pas_load(archival = TRUE) %>%
+      dplyr::bind_rows(pas_old, pas_latest) %>%
+      dplyr::distinct(THINGSPEAK_PRIMARY_ID, locationID, .keep_all = TRUE) %>%
       pas_filter(.data$countryCode == opt$countryCode) %>%
       pas_filter(.data$lastSeenDate > starttime)
+
   },
   error = function(e) {
     msg <- paste('Fatal PAS Load Execution: ', e)
@@ -210,17 +228,10 @@ tryCatch(
   }
 )
 
-# Capture Unique IDs
+# Get time series unique identifiers
 tryCatch(
   expr = {
-    # Get time series unique identifiers
-    deviceDeploymentIDs <-
-      pas %>%
-      pas_filter(.data$DEVICE_LOCATIONTYPE == "outside") %>%
-      pas_filter(is.na(.data$parentID)) %>%
-      pas_filter(stringr::str_detect(.data$label, opt$pattern)) %>%
-      dplyr::pull(.data$deviceDeploymentID)
-  
+    deviceDeploymentIDs <- pas_getDeviceDeploymentIDs(pas, pattern = opt$pattern)
     logger.info("Loading PAT data for %d sensors", length(deviceDeploymentIDs))
   },
   error = function(e) {
