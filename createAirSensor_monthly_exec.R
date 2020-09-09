@@ -26,9 +26,9 @@ if ( interactive() ) {
     logDir = file.path(getwd(), "logs"),
     countryCode = "US",
     stateCode = "CA",
-    pattern = "^SCNP_..",
+    pattern = "^SCSB_..",
     collectionName = "scaqmd",
-    datestamp = "201904",
+    datestamp = "201710",
     version = FALSE
   )
   
