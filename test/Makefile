@@ -54,6 +54,9 @@ createAirSensor_extended: setup
 createAirSensor_201904: setup
 	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201904 --stateCode=CA --pattern=^SCNP_..
 
+createAirSensor_201710: setup
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201710 --stateCode=CA --pattern=^SCSB_..
+
 createAirSensor_annual: setup
 	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_annual_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
 

@@ -7,8 +7,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . use 2019 pas object
-VERSION = "0.2.7"
+#  ----- . AirSensor 0.9.x . fix use of archival pas objects
+VERSION = "0.2.8"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -198,16 +198,24 @@ tryCatch(
 tryCatch(
   expr = {
 
-    logger.info('Loading PAS data ...')
-
-    # Create a 'pas' object for all current and historical SCAQMD sensors
-    pas_old <- pas_load(datestamp = "20191001", archival = TRUE)
-    pas_latest <- pas_load(archival = TRUE) 
-
-    # Handle any improper typing
-    pas_old$deviceID <- as.character(pas_old$deviceID)
-    pas_latest$deviceID <- as.character(pas_latest$deviceID)
-
+    if ( starttime < MazamaCoreUtils::parseDatetime(20191001, timezone = "UTC") ) {
+      
+      # NOTE:  The 20191001 pas object has 2017 information, later objects do not.
+      pas_datestamp <- "20191001"
+      
+    } else {
+      
+      # NOTE:  Load a pas object from the beginning of the next month to make sure
+      # NOTE:  that we catch any sensors deployed mid-month.
+      pas_datestamp <- 
+        MazamaCoreUtils::parseDatetime(datestamp, timezone = "UTC") %>%
+        lubridate::ceiling_date(starttime, unit = "month") %>%
+        strftime("%Y%m%d", tz = "UTC")
+      
+    }
+    
+    logger.info('Loading PAS data for %s', pas_datestamp)
+    
     # NOTE:  Determine distinct records by using both the channel-specific ID
     # NOTE:  and the locationID. If the sensor moves, we will get a new
     # NOTE:  locationID and keep those records. Otherwise we retain the A- and
@@ -215,11 +223,17 @@ tryCatch(
     # NOTE:  have the same sensor in the same location.
     
     pas <- 
-      dplyr::bind_rows(pas_old, pas_latest) %>%
+      pas <- pas_load(
+        datestamp = pas_datestamp,
+        retries = 32,
+        timezone = "UTC",
+        archival = TRUE,
+        verbose = FALSE
+      ) %>%
       dplyr::distinct(THINGSPEAK_PRIMARY_ID, locationID, .keep_all = TRUE) %>%
       pas_filter(.data$countryCode == opt$countryCode) %>%
       pas_filter(.data$lastSeenDate > starttime)
-
+    
   },
   error = function(e) {
     msg <- paste('Fatal PAS Load Execution: ', e)
