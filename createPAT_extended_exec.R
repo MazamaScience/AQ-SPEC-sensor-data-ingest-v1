@@ -251,7 +251,6 @@ tryCatch(
             next
           }
 
-          # * 
           logger.trace(
             "%4d/%d Updating %s",
             count,
