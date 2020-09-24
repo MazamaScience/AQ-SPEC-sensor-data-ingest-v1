@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . -----
-VERSION = "0.2.5"
+#  ----- . AirSensor 0.9.x . pas_getDeviceDeploymentID()
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -189,10 +189,7 @@ tryCatch(
     # Get time series unique identifiers
     deviceDeploymentIDs <-
       pas %>%
-      pas_filter(.data$DEVICE_LOCATIONTYPE == "outside") %>%
-      pas_filter(is.na(.data$parentID)) %>%
-      pas_filter(stringr::str_detect(.data$label, opt$pattern)) %>%
-      dplyr::pull(.data$deviceDeploymentID)
+      pas_getDeviceDeploymentIDs(pattern = opt$pattern)
   },
   error = function(e) {
     msg <- paste('deviceDeploymentID not found: ', e)

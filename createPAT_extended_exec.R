@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . minor restructure
-VERSION = "0.2.6"
+#  ----- . AirSensor 0.9.x . pas_getDeviceDeploymentID()
+VERSION = "0.2.7"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -22,7 +22,7 @@ if ( interactive() ) {
   # RStudio session
   # NOTE: Remeber to set the working directory for logging with setwd()
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "test/output"),
+    archiveBaseDir = file.path(getwd(), "test/data"),
     logDir = file.path(getwd(), "test/logs"),
     countryCode = "US",
     stateCode = "CA",
@@ -204,10 +204,7 @@ tryCatch(
     logger.info('Capturing Unique Device Deployment IDs')
     deviceDeploymentIDs <- 
       pas %>%
-      pas_filter(.data$DEVICE_LOCATIONTYPE == 'outside') %>%
-      pas_filter(is.na(.data$parentID)) %>%
-      pas_filter(stringr::str_detect(.data$label, opt$pattern)) %>%
-      dplyr::pull(.data$deviceDeploymentID)
+      pas_getDeviceDeploymentIDs(pattern = opt$pattern)
   },
   error = function(e) {
     msg <- paste('Error in Device Deployment IDs: ', e)
@@ -254,6 +251,7 @@ tryCatch(
             next
           }
 
+          # * 
           logger.trace(
             "%4d/%d Updating %s",
             count,
@@ -298,7 +296,7 @@ tryCatch(
           save(list = "pat", file = cur_monthPath)
 
           # Update the previous month file until 7-days into the current month
-          if ( lubridate::day(now) < 7 ) {
+          if ( lubridate::day(now, tzone = "UTC") < 7 ) {
             pat <-
               pat_full %>%
               pat_filterDate(prev_monthStart, prev_monthEnd, timezone = timezone)
