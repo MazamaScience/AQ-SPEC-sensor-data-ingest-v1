@@ -7,21 +7,28 @@
 #
 # Test this script from the command line with:
 #
-# ./createVideo_exec.R --communityName="Sycamore Canyon" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE
-# ./createVideo_exec.R -c SCSB -o ~/Desktop/
+# ./createVideo_exec.R --communityName="Sycamore Canyon" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE 
+# ./createVideo_exec.R -c SCSB -o test/data
 
-# ----- . 7-day, smaller, scqamd colors . AirSensor 0.5.16
-VERSION = "0.2.2"
+# ----- . AirSensor 1.0.0 . -----
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  library(futile.logger)
-  library(AirSensor)
+  ###library(futile.logger)
   library(MazamaCoreUtils)
   library(MazamaSpatialUtils)
+  library(AirSensor)
   
   # setArchiveBaseUrl("http://smoke.mazamascience.com/data/PurpleAir")
 })
+
+# Load all shared utility functions
+utilFiles <- list.files("R", pattern = ".+\\.R", full.names = TRUE)
+
+for (file in utilFiles) {
+  source(file.path(getwd(), file))
+}
 
 # ----- Get command line arguments ---------------------------------------------
 
@@ -29,7 +36,7 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
+    archiveBaseDir = file.path(getwd(), "test/data"),
     logDir = file.path(getwd(), "logs"),
     communityID = "SCSB",
     communityName = "",
@@ -111,10 +118,6 @@ if (opt$version) {
   quit()
 }
 
-# Command line options
-optionsString <- paste(capture.output(str(opt)), collapse='\n')
-logger.debug('Command line options:\n\n%s\n', optionsString)
-
 # ----- Validate parameters ----------------------------------------------------
 
 if (opt$frameRate < 0 || opt$frameRate != floor(opt$frameRate)) {
@@ -147,11 +150,13 @@ logger.setup(
 errorLog <- file.path(opt$logDir, "createVideo_ERROR.log")
 
 # Silence other warning messages
-options(warn=-1) # -1=ignore, 0=save/print, 1=print, 2=error
+options(warn = -1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
 logger.info("Running createVideo_exec.R version %s", VERSION)
-sessionString <- paste(capture.output(sessionInfo()), collapse="\n")
+optionsString <- paste(capture.output(str(opt)), collapse = '\n')
+logger.debug('Command line options:\n\n%s\n', optionsString)
+sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
 logger.debug("R session:\n\n%s\n", sessionString)
 
 # ----- Set up community regions -----------------------------------------------
@@ -208,6 +213,7 @@ result <- try({
   dateRange <- MazamaCoreUtils::dateRange(
     enddate = opt$datestamp,
     timezone = opt$timezone,
+    unit = "day",
     ceilingEnd = TRUE,
     days = opt$days
   )
@@ -256,7 +262,7 @@ result <- try({
   logger.info("Preparing the time axis")
   if ( opt$days <= 3 ) {
     tickSkip <- 6
-  } else if ( opt$days <= 7 ) {
+  } else if ( opt$days <= 6 ) {
     tickSkip <- 12
   } else {
     tickSkip <- 24
@@ -335,11 +341,11 @@ result <- try({
   logger.info("Calling ffmpeg to make video from frames")
   logger.trace(cmd)
 
-  ffmpegString <- paste(capture.output(system(cmd)), collapse="\n")
+  ffmpegString <- paste(capture.output(system(cmd)), collapse = "\n")
 
   logger.trace("ffmpeg output:\n\n%s\n", ffmpegString)
   
-}, silent=TRUE)
+}, silent = TRUE)
 
 if (opt$verbose) {
   print(result)

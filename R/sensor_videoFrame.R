@@ -133,7 +133,11 @@ sensor_videoFrame <- function(
     dplyr::select(.data$datetime, monitorId) %>% 
     dplyr::filter(.data$datetime == frameTime) %>%
     dplyr::select(-.data$datetime) %>%
-    tidyr::gather(key = "monitorID", value = "pm25")
+    tidyr::pivot_longer(
+      cols = everything(), 
+      names_to = "monitorID", 
+      values_to = "pm25"
+    )
   pm25 <- sensorData$pm25
   
   data <- data.frame(monitorId, longitude, latitude, pm25)
@@ -142,7 +146,7 @@ sensor_videoFrame <- function(
   
   ti <- dplyr::filter(timeInfo, .data$localTime == frameTime)
   
-  if(ti$night) {
+  if (ti$night) {
     par(bg = "gray60")
   } else {
     par(bg = "white")
@@ -223,14 +227,20 @@ sensor_videoFrame <- function(
   rect(left, bottoms, right, tops, col = colorPalette, border = NA)
   rect(left, bottom,  right, top)
   
-  # Draw labels
-  raster::text(right - (right - left) / 2, top + (usr[4] - usr[3]) * 0.05,
-               labels = "PM 2.5", font = 2,  cex = 4.4)
+  # Legend title
+  raster::text(right - (right - left) / 2, 
+               top + (usr[4] - usr[3]) * 0.10,
+               labels = "PM 2.5", font = 2,  cex = 2.5)
+  raster::text(right - (right - left) / 2, 
+               top + (usr[4] - usr[3]) * 0.04,
+               labels = "(\U03BCg/m\U00B3)", font = 1,  cex = 2.0)
+  
+  
   # Disabled to keep units ambiguous
-  #raster::text(right - (right - left) / 2, top + (usr[4] - usr[3]) / 16, 
-  #     labels = "(\U03BCg/m\U00B3)", cex = 1.4)
-  #text(left, bottom,  as.character(0),  pos = 2, cex = 1.5)
-  #text(left, top,     as.character(60), pos = 2, cex = 1.5)
+  text(right, bottoms[4],  as.character(12),  pos = 4, font = 2, cex = 1.5)
+  text(right, bottoms[8],  as.character(35),  pos = 4, font = 2, cex = 1.5)
+  text(right, bottoms[12],  as.character(55),  pos = 4, font = 2, cex = 1.5)
+  text(right, bottoms[16],  as.character(75),  pos = 4, font = 2, cex = 1.5)
   
   # ----- Plot points ----------------------------------------------------------
   
@@ -274,7 +284,7 @@ sensor_videoFrame <- function(
   # ----- Plot time axis -------------------------------------------------------
   
   # To the left of the map, draw an invisible plot with a visible axis
-  par(mar = c(0.5, 0.5, 6, 0.5))
+  par(mar = c(2.5, 0.5, 6, 0.5))
   plot(rep(0, length(timeAxis)), -(as.numeric(timeAxis)), axes = FALSE, 
        col = 'transparent')
   
@@ -305,8 +315,10 @@ if ( FALSE ) {
   
   # Get dates
   dateRange <- MazamaCoreUtils::dateRange(
-    startdate = "2019-07-04",
+    enddate = "2019-07-07",
     days = 7,
+    unit = "day",
+    ceilingEnd = TRUE,
     timezone = "America/Los_Angeles"
   )
 
@@ -357,11 +369,11 @@ if ( FALSE ) {
   
   # Many bins
   colorBins <- c(0,
-                 seq(0,12,length.out=5)[-1],
-                 seq(12,35,length.out=5)[-1],
-                 seq(35,55,length.out=5)[-1],
-                 seq(55,75,length.out=5)[-1],
-                 100,200,500,1000)
+                 seq(0, 12, length.out = 5)[-1],
+                 seq(12, 35, length.out = 5)[-1],
+                 seq(35, 55, length.out = 5)[-1],
+                 seq(55, 75, length.out = 5)[-1],
+                 100, 200, 500, 1000)
   colorPalette <- grDevices::colorRampPalette(colors)(length(colorBins))
   
   
