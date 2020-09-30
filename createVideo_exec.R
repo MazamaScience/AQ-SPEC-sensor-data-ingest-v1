@@ -7,7 +7,7 @@
 #
 # Test this script from the command line with:
 #
-# ./createVideo_exec.R --communityName="Sycamore Canyon" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE 
+# ./createVideo_exec.R --communityID="SCSB" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE 
 # ./createVideo_exec.R -c SCSB -o test/data
 
 # ----- . AirSensor 1.0.0 . -----
@@ -15,7 +15,6 @@ VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
-  ###library(futile.logger)
   library(MazamaCoreUtils)
   library(MazamaSpatialUtils)
   library(AirSensor)
@@ -37,9 +36,8 @@ if ( interactive() ) {
   # RStudio session
   opt <- list(
     archiveBaseDir = file.path(getwd(), "test/data"),
-    logDir = file.path(getwd(), "logs"),
+    logDir = file.path(getwd(), "test/logs"),
     communityID = "SCSB",
-    communityName = "",
     datestamp = NULL,
     timezone = "America/Los_Angeles",
     days = 7,
@@ -64,11 +62,6 @@ if ( interactive() ) {
       c("-c","--communityID"), 
       default = "", 
       help = "ID of the South Coast community [default=\"%default\"]"
-    ),
-    make_option(
-      c("-C","--communityName"), 
-      default = "", 
-      help = "Name of the South Coast community [default=\"%default\"]"
     ),
     make_option(
       c("-d","--datestamp"), 
@@ -109,7 +102,7 @@ if ( interactive() ) {
   )
   
   # Parse arguments
-  opt <- parse_args(OptionParser(option_list=option_list))
+  opt <- parse_args(OptionParser(option_list = option_list))
 }
 
 # Print out version and quit
@@ -124,8 +117,8 @@ if (opt$frameRate < 0 || opt$frameRate != floor(opt$frameRate)) {
   stop("frameRate must be a positive integer")
 }
 
-if (opt$communityID == "" && opt$communityName == "") {
-  stop("Must define either a community name or ID")
+if (opt$communityID == "") {
+  stop("Must define a community ID")
 }
 
 if ( dir.exists(opt$archiveBaseDir) ) {
@@ -161,20 +154,22 @@ logger.debug("R session:\n\n%s\n", sessionString)
 
 # ----- Set up community regions -----------------------------------------------
 
-# SCAP --- Alhambra/Monterey Park
-# SCBB --- Big Bear Lake
-# SCEM --- El Monte
-# SCIV --- Imperial Valley
-# SCNP --- Nipomo
-# SCPR --- Paso Robles
-# SCSJ --- San Jacinto
-# SCSB --- Seal Beach
-# SCAH --- SCAH
-# SCAN --- SCAN
-# SCUV --- SCUV
-# SCSG --- South Gate
-# SCHS --- Sycamore Canyon
-# SCTV --- Temescal Valley
+communityRegionList <- list(
+  SCAP = "Alhambra/Monterey Park",
+  SCBB = "Big Bear Lake",
+  SCEM = "El Monte",
+  SCIV = "Imperial Valley",
+  SCNP = "Nipomo",
+  SCPR = "Paso Robles",
+  SCSJ = "San Jacinto",
+  SCSB = "Seal Beach",
+  SCAH = "SCAH",
+  SCAN = "SCAN",
+  SCUV = "SCUV",
+  SCSG = "South Gate",
+  SCHS = "Sycamore Canyon",
+  SCTV = "Temescal Valley"
+)
 
 communityGeoMapInfo <- list(
   SCAP = list(lon = -118.132324, lat = 34.072205, zoom = 13),
@@ -218,6 +213,13 @@ result <- try({
     days = opt$days
   )
   
+  # NOTE:  Force default (datestamp == NULL) to end at yesterday midnight instead
+  # NOTE:  of tonight. 
+  
+  if ( is.null(opt$datestamp) ) {
+    dateRange <- dateRange - lubridate::ddays(1)
+  }
+  
   # Get the year in local time
   yearStamp <- strftime(dateRange[2], "%Y", tz = opt$timezone)
 
@@ -239,21 +241,19 @@ result <- try({
   
   # Retrieve both the community name and ID. Prioritize name over ID if they are
   # different.
-  if (opt$communityName != "") {
-    communityMeta <- dplyr::filter(sensor$meta, communityRegion == opt$communityName)
-    if (nrow(communityMeta) == 0) {
-      stop(paste0("Community with name '", opt$communityName, "' has no monitors"))
-    }
-    opt$communityID <- toupper(sub("\\_.*", "", communityMeta[1, "monitorID"]))
-  } else if (opt$communityID != "") {
+  if ( opt$communityID != "" ) {
+    
     opt$communityID <- toupper(opt$communityID)
-    communityMeta <- dplyr::filter(sensor$meta, stringr::str_detect(toupper(monitorID), paste0("^", opt$communityID, "_")))
+    communityRegion <- communityRegionList[[opt$communityID]]
+    communityMeta <- dplyr::filter(sensor$meta, communityRegion == !!communityRegion)
     if (nrow(communityMeta) == 0) {
       stop(paste0("Community with ID '", opt$communityID, "' has no monitors"))
     }
-    opt$communityName <- communityMeta[1, "communityRegion"]
+
   } else {
+    
     stop("Must provide a South Coast community name or ID")
+    
   }
   
   mapInfo <- communityGeoMapInfo[[opt$communityID]]
@@ -280,7 +280,7 @@ result <- try({
   tInfo <- PWFSLSmoke::timeInfo(tAxis, longitude = mapInfo$lon, latitude = mapInfo$lat)
   
   # Load a static map image of the community
-  logger.info("Loading static map of community '%s'", opt$communityName)
+  logger.info("Loading static map of community '%s'", communityRegion)
   staticMap   <- PWFSLSmoke::staticmap_getStamenmapBrick(centerLon = mapInfo$lon,
                                                          centerLat = mapInfo$lat,
                                                          zoom = mapInfo$zoom,
@@ -302,7 +302,7 @@ result <- try({
                  strftime(frameTime, "%b %d %H:%M", tz = opt$timezone))
     sensor_videoFrame(
       sensor,
-      communityRegion = opt$communityName,
+      communityRegion = communityRegion,
       frameTime = frameTime,
       timeInfo = tInfo,
       timeAxis = tAxis,
