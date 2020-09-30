@@ -108,11 +108,11 @@ sensor_videoFrame <- function(
   # Default bins
   if ( is.null(colorBins) ) {
     colorBins <- c(0,
-                   seq(0,12,length.out=5)[-1],
-                   seq(12,35,length.out=5)[-1],
-                   seq(35,55,length.out=5)[-1],
-                   seq(55,75,length.out=5)[-1],
-                   100,200,500,1000)
+                   seq(0, 12, length.out = 5)[-1],
+                   seq(12, 35, length.out = 5)[-1],
+                   seq(35, 55, length.out = 5)[-1],
+                   seq(55, 75, length.out = 5)[-1],
+                   100, 200, 500, 1000)
   }
   
   # Default colors
@@ -290,7 +290,7 @@ sensor_videoFrame <- function(
   
   # Upper-left date/time stamp
   mtext(strftime(frameTime, "%b %e", tz = "America/Los_Angeles") , line = 2.3, 
-        cex = 3.2)
+        cex = 2.6)
   mtext(strftime(frameTime, "%l %P", tz = "America/Los_Angeles") , line = 0.3, 
         cex = 2.3)
   
