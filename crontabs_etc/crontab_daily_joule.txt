@@ -78,9 +78,33 @@
   # SCHS --- Sycamore Canyon
   # SCTV --- Temescal Valley
 
-#03 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAP >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+00 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAP >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
 
-#05 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSB >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+04 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCBB >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+08 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCEM >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+12 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCIV >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+16 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCNP >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+20 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCPR >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+24 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSJ >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+28 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSB >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+32 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAH >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+36 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAN >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+40 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCUV >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+44 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSG >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+48 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCHS >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+52 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCTV >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
 
 
 
