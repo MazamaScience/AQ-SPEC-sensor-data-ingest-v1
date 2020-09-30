@@ -130,7 +130,7 @@ sensor_videoFrame <- function(
   latitude <- community$latitude
   
   sensorData <- sensor$data %>% 
-    dplyr::select(.data$datetime, monitorId) %>% 
+    dplyr::select(.data$datetime, all_of(monitorId)) %>% 
     dplyr::filter(.data$datetime == frameTime) %>%
     dplyr::select(-.data$datetime) %>%
     tidyr::pivot_longer(
