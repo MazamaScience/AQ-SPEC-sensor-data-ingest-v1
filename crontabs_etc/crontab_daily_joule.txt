@@ -61,6 +61,28 @@
 02 02 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_annual_exec.R --archiveBaseDir=/data --logDir=/logs >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
 
 
+# ----- Create community videos once per day -----------------------------------
+
+  # SCAP --- Alhambra/Monterey Park
+  # SCBB --- Big Bear Lake
+  # SCEM --- El Monte
+  # SCIV --- Imperial Valley
+  # SCNP --- Nipomo
+  # SCPR --- Paso Robles
+  # SCSJ --- San Jacinto
+  # SCSB --- Seal Beach
+  # SCAH --- SCAH
+  # SCAN --- SCAN
+  # SCUV --- SCUV
+  # SCSG --- South Gate
+  # SCHS --- Sycamore Canyon
+  # SCTV --- Temescal Valley
+
+#03 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCAP >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+#05 03 * * *    docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createVideo_exec.R --archiveBaseDir=/data --logDir=/logs --communityID=SCSB >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
+
 
 
 
