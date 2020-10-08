@@ -295,7 +295,7 @@ tryCatch(
           save(list = "pat", file = cur_monthPath)
 
           # Update the previous month file until 7-days into the current month
-          if ( lubridate::day(now, tzone = "UTC") < 7 ) {
+          if ( lubridate::day(now) < 7 ) {
             pat <-
               pat_full %>%
               pat_filterDate(prev_monthStart, prev_monthEnd, timezone = timezone)
