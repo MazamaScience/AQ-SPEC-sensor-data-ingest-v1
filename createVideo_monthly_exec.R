@@ -7,7 +7,7 @@
 #
 # Test this script from the command line with:
 #
-# ./createVideo_archive_exec.R --communityID="SCSB" -s 201907 -r 4 -o ~/Desktop/ -v TRUE 
+# ./createVideo_monthly_exec.R --communityID="SCSB" -s 201907 -r 4 -o ~/Desktop/ -v TRUE 
 
 # ----- . AirSensor 1.0.0 . -----
 VERSION = "0.3.0"
@@ -106,7 +106,7 @@ if ( interactive() ) {
 
 # Print out version and quit
 if (opt$version) {
-  cat(paste0("createVideo_archive_exec.R ", VERSION, "\n"))
+  cat(paste0("createVideo_monthly_exec.R ", VERSION, "\n"))
   quit()
 }
 
@@ -132,20 +132,20 @@ if ( !dir.exists(opt$logDir) )
 # ----- Set up logging ---------------------------------------------------------
 
 logger.setup(
-  traceLog = file.path(opt$logDir, "createVideo_archive_TRACE.log"),
-  debugLog = file.path(opt$logDir, "createVideo_archive_DEBUG.log"), 
-  infoLog  = file.path(opt$logDir, "createVideo_archive_INFO.log"), 
-  errorLog = file.path(opt$logDir, "createVideo_archive_ERROR.log")
+  traceLog = file.path(opt$logDir, "createVideo_monthly_TRACE.log"),
+  debugLog = file.path(opt$logDir, "createVideo_monthly_DEBUG.log"), 
+  infoLog  = file.path(opt$logDir, "createVideo_monthly_INFO.log"), 
+  errorLog = file.path(opt$logDir, "createVideo_monthly_ERROR.log")
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, "createVideo_archive_ERROR.log")
+errorLog <- file.path(opt$logDir, "createVideo_monthly_ERROR.log")
 
 # Silence other warning messages
 options(warn = -1) # -1=ignore, 0=save/print, 1=print, 2=error
 
 # Start logging
-logger.info("Running createVideo_archive_exec.R version %s", VERSION)
+logger.info("Running createVideo_monthly_exec.R version %s", VERSION)
 optionsString <- paste(capture.output(str(opt)), collapse = '\n')
 logger.debug('Command line options:\n\n%s\n', optionsString)
 sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
@@ -191,7 +191,7 @@ communityGeoMapInfo <- list(
 
 # Timezone should be passed in local time
 
-monthStamp <- 
+start <- 
   stringr::str_sub(opt$datestamp, 1, 6) %>%
   MazamaCoreUtils::parseDatetime(timezone = "America/Los_Angeles")
 
@@ -206,7 +206,7 @@ datestamps <-
 
 for ( datestamp in datestamps ) {
   
-  logger.info("Working on datestam:= %s", datestamp)
+  logger.info("Working on datestamp:= %s", datestamp)
   
   # TODO:  Does Sys.sleep(60) here reduce cpu load?
   Sys.sleep(60)
