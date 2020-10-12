@@ -99,6 +99,8 @@
 
 53 08 14 09 *   docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_monthly_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode=CA --pattern=^[Ss][Cc].._..$ --datestamp=202008 >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
 
+53 09 14 09 *   docker run --rm -v /home/jonc/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /var/www/data.mazamascience.com/html/PurpleAir/v1:/data -v /var/www/data.mazamascience.com/html/PurpleAir/v1/logs:/logs -w /app mazamascience/airsensor /app/createAirSensor_monthly_exec.R --archiveBaseDir=/data --logDir=/logs --stateCode=CA --pattern=^[Ss][Cc].._..$ --datestamp=202009 >> /var/www/data.mazamascience.com/html/PurpleAir/v1/logs/cron_log.txt 2>&1 
+
 
 
 
