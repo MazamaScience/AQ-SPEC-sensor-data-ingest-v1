@@ -10,8 +10,8 @@
 # ./createVideo_exec.R --communityID="SCSB" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE 
 # ./createVideo_exec.R -c SCSB -o test/data
 
-# ----- . AirSensor 1.0.0 . -----
-VERSION = "0.3.0"
+# ----- . AirSensor 1.0.0 . month subdirectory
+VERSION = "0.3.1"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -188,14 +188,6 @@ communityGeoMapInfo <- list(
   SCTV = list(lon = -117.481278, lat = 33.753517, zoom = 12)
 )
 
-# c(
-#   ">75 \u03bcg / m\u00b3" = "#6A367A",
-#   "55-75 \u03bcg / m\u00b3" = "#8659A5",
-#   "35-55 \u03bcg / m\u00b3" = "#286096",
-#   "12-35 \u03bcg / m\u00b3" ="#118CBA",
-#   "0-12 \u03bcg / m\u00b3" = "#abe3f4"
-# )
-
 # ----- Create videos ----------------------------------------------------------
 
 # Timezone is passed in local time
@@ -222,9 +214,10 @@ result <- try({
   
   # Get the year in local time
   yearStamp <- strftime(dateRange[2], "%Y", tz = opt$timezone)
-
+  monthStamp <- strftime(dateRange[2], "%m", tz = opt$timezone)
+  
   # Create directory if it doesn't exist
-  outputDir <- file.path(opt$archiveBaseDir, "videos", yearStamp)
+  outputDir <- file.path(opt$archiveBaseDir, "videos", yearStamp, monthStamp)
   logger.info("Output directory: %s", outputDir)
   
   if ( !dir.exists(outputDir) ) {
@@ -281,12 +274,16 @@ result <- try({
   
   # Load a static map image of the community
   logger.info("Loading static map of community '%s'", communityRegion)
-  staticMap   <- PWFSLSmoke::staticmap_getStamenmapBrick(centerLon = mapInfo$lon,
-                                                         centerLat = mapInfo$lat,
-                                                         zoom = mapInfo$zoom,
-                                                         width = 770,
-                                                         height = 495)
-
+  
+  staticMap <- 
+    PWFSLSmoke::staticmap_getStamenmapBrick(
+      centerLon = mapInfo$lon,
+      centerLat = mapInfo$lat,
+      zoom = mapInfo$zoom,
+      width = 770,
+      height = 495
+    )
+  
   # Generate individual frames
   logger.info("Generating %s video frames", length(tAxis))
   for (i in 1:length(tAxis)) {
@@ -327,13 +324,15 @@ result <- try({
 
   # Define system calls to ffmpeg to create video from frames
   cmd_cd <- paste0("cd ", tempdir())
-  cmd_ffmpeg <- paste0("ffmpeg -y -loglevel quiet -r ", 
-                       ###opt$frameRate, " -f image2 -s 1280x720 -i ", 
-                       opt$frameRate, " -f image2 -s 960x540 -i ", 
-                       opt$communityID, "%03d.png -vcodec libx264 -crf 25 ", 
-                       # https://bugzilla.mozilla.org/show_bug.cgi?id=1368063#c7
-                       "-pix_fmt yuv420p ",
-                       outputDir, "/", fileName)
+  cmd_ffmpeg <- paste0(
+    "ffmpeg -y -loglevel quiet -r ", 
+    ###opt$frameRate, " -f image2 -s 1280x720 -i ", 
+    opt$frameRate, " -f image2 -s 960x540 -i ", 
+    opt$communityID, "%03d.png -vcodec libx264 -crf 25 ", 
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1368063#c7
+    "-pix_fmt yuv420p ",
+    outputDir, "/", fileName
+  )
   cmd_rm <- paste0("rm *.png")
   cmd <- paste0(cmd_cd, " && ", cmd_ffmpeg, " && ", cmd_rm)
   
