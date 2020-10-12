@@ -376,7 +376,7 @@ for ( datestamp in datestamps ) {
   } else {
     # Guarantee that the errorLog exists
     if ( !file.exists(errorLog) ) dummy <- file.create(errorLog)
-    logger.info("successfully created %s", fileName)
+    logger.info("Successfully created %s\n", fileName)
   }
   
 } # END for ( datestamp in datestamps )
