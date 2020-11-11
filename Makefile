@@ -3,9 +3,11 @@
 #
 
 # Set variables
-ARCHIVE_BASE_DIR:=/var/www/html/data/PurpleAir
+ARCHIVE_BASE_DIR:=/var/www/html/PurpleAir/v1
 
 EXEC_DIR:=/root/AQ-SPEC-sensor-data-ingest-v1
+
+DAILY_CRONTAB:=crontab_daily_DO.txt
 
 # Targets
 docker_image:
@@ -14,6 +16,7 @@ docker_image:
 
 base_dir:
 	sudo mkdir -p $(ARCHIVE_BASE_DIR)/logs
+	touch $(ARCHIVE_BASE_DIR)/logs/cron_log.txt
 
 scripts:
 	chmod +x createAirSensor_annual_exec.R
@@ -25,5 +28,8 @@ scripts:
 	chmod +x createPAT_monthly_exec.R
 	chmod +x createVideo_exec.R
 
-configure: docker_image base_dir scripts
+crontab:
+	crontab crontab $(EXEC_DIR)/crontabs_etc/$(DAILY_CRONTAB)
+
+configure: docker_image base_dir scripts crontab
 	
