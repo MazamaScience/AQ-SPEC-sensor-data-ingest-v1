@@ -1,6 +1,6 @@
 ###############################################################################
 # Uptime log
-00,15,30,45 *  *   *   *   echo `date -I` | tr -d '\n'  >> /var/www/mazamascience.com/html/logs/uptime.log
+00,15,30,45 *  *   *   *   echo "`date -Iseconds` " | tr -d '\n'  >> /var/www/mazamascience.com/html/logs/uptime.log
 01,16,31,46 *  *   *   *   uptime >> /var/www/mazamascience.com/html/logs/uptime.log
 
 ###############################################################################
