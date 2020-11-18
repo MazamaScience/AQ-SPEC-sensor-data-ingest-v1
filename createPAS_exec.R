@@ -5,8 +5,8 @@
 # See test/Makefile for testing options
 #
 
-#  ---- . AirSensor 0.9.x . ----
-VERSION = "0.2.5"
+#  ---- . AirSensor 0.9.x . updated PAS baseUrl
+VERSION = "0.2.6"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -132,7 +132,7 @@ result <- try({
     countryCodes = c('US'),
     includePWFSL = TRUE,
     lookbackDays = 1e6, # ~720 BC. Rome was in its youth.
-    baseUrl = 'https://www.purpleair.com/json'
+    baseUrl = 'https://www.purpleair.com/json?all=true'
   )
 
   # Save the archival version

@@ -10,8 +10,8 @@
 # ./createVideo_exec.R --communityID="SCSB" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE 
 # ./createVideo_exec.R -c SCSB -o test/data
 
-# ----- . AirSensor 1.0.0 . month subdirectory
-VERSION = "0.3.1"
+# ----- . AirSensor 1.0.0 . updated zoom settings
+VERSION = "0.3.2"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -37,7 +37,7 @@ if ( interactive() ) {
   opt <- list(
     archiveBaseDir = file.path(getwd(), "test/data"),
     logDir = file.path(getwd(), "test/logs"),
-    communityID = "SCSB",
+    communityID = "SCUV",
     datestamp = NULL,
     timezone = "America/Los_Angeles",
     days = 7,
@@ -163,9 +163,9 @@ communityRegionList <- list(
   SCPR = "Paso Robles",
   SCSJ = "San Jacinto",
   SCSB = "Seal Beach",
-  SCAH = "SCAH",
+  SCAH = "SCAH", # Oakland
   SCAN = "SCAN",
-  SCUV = "SCUV",
+  SCUV = "SCUV", # West LA
   SCSG = "South Gate",
   SCHS = "Sycamore Canyon",
   SCTV = "Temescal Valley"
@@ -177,10 +177,10 @@ communityGeoMapInfo <- list(
   SCEM = list(lon = -118.034595, lat = 34.069292, zoom = 12),
   SCIV = list(lon = -115.551228, lat = 32.980878, zoom = 14),
   SCNP = list(lon = -120.555047, lat = 35.061590, zoom = 12),
-  SCPR = list(lon = -120.668946, lat = 35.513530, zoom = 10),
+  SCPR = list(lon = -120.67, lat = 35.57, zoom = 11),
   SCSJ = list(lon = -116.958228, lat = 33.765083, zoom = 14),
   SCSB = list(lon = -118.083084, lat = 33.767033, zoom = 15),
-  SCAH = list(lon = -122.139473, lat = 37.662620, zoom = 10),
+  SCAH = list(lon = -122.14, lat = 37.66, zoom = 11),
   SCAN = list(lon = -122.307492, lat = 37.964949, zoom = 12),
   SCUV = list(lon = -118.427781, lat = 34.023917, zoom = 15),
   SCSG = list(lon = -118.178104, lat = 33.934260, zoom = 13),
