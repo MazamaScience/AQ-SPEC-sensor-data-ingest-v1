@@ -132,7 +132,7 @@ result <- try({
     countryCodes = c('US'),
     includePWFSL = TRUE,
     lookbackDays = 1e6, # ~720 BC. Rome was in its youth.
-    baseUrl = 'https://www.purpleair.com/json?all=true'
+    baseUrl = 'https://www.purpleair.com/json?tempAccess5=true'
   )
 
   # Save the archival version
