@@ -45,3 +45,37 @@ crontab:
 # Perform all tasks
 install: docker_image base_dir scripts create_pas crontab
 	
+
+################################################################################
+# Targets for the data archive under ARCHIVE_BASE_DIR
+
+create_archive_dirs:
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/airsensor/2017
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/airsensor/2018
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/airsensor/2019
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/airsensor/2020
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/airsensor/latest
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/logs
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/pas/2019
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/pas/2020
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/pat/2017
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/pat/2018
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/pat/2019
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/pat/2020
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/pat/latest
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/videos/2017
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/videos/2018
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/videos/2019
+	sudo mkdir -p $(ARCHIVE_BASE_DIR)/videos/2020
+
+install_airsensor_archive:
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/airsensor --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.rda" http://smoke.mazamascience.com/data/PurpleAir/v1/airsensor
+
+install_pas_archive:
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/pas --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.rda" http://smoke.mazamascience.com/data/PurpleAir/v1/pas
+
+install_pat_archive:
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/pat --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.rda" http://smoke.mazamascience.com/data/PurpleAir/v1/pat
+
+install_video_archive:
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/videos --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.mp4" http://smoke.mazamascience.com/data/PurpleAir/v1/videos
