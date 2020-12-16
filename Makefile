@@ -25,14 +25,14 @@ base_dir:
 
 # Make sure scripts are executable
 scripts:
-	chmod +x createAirSensor_annual_exec.R
-	chmod +x createAirSensor_extended_exec.R
-	chmod +x createAirSensor_latest_exec.R
-	chmod +x createPAS_exec.R
-	chmod +x createPAT_extended_exec.R
-	chmod +x createPAT_latest_exec.R
-	chmod +x createPAT_monthly_exec.R
-	chmod +x createVideo_exec.R
+	chmod +x $(EXEC_DIR)/createAirSensor_annual_exec.R
+	chmod +x $(EXEC_DIR)/createAirSensor_extended_exec.R
+	chmod +x $(EXEC_DIR)/createAirSensor_latest_exec.R
+	chmod +x $(EXEC_DIR)/createPAS_exec.R
+	chmod +x $(EXEC_DIR)/createPAT_extended_exec.R
+	chmod +x $(EXEC_DIR)/createPAT_latest_exec.R
+	chmod +x $(EXEC_DIR)/createPAT_monthly_exec.R
+	chmod +x $(EXEC_DIR)/createVideo_exec.R
 
 # Create an initial PAS object (required for PAT and AirSensor scripts)
 create_pas:
