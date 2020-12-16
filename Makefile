@@ -69,13 +69,17 @@ create_archive_dirs:
 	sudo mkdir -p $(ARCHIVE_BASE_DIR)/videos/2020
 
 install_airsensor_archive:
-	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/airsensor --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.rda" http://smoke.mazamascience.com/data/PurpleAir/v1/airsensor
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/airsensor --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=3 --reject "index.html*" --accept "*.rda" http://data.mazamascience.com/PurpleAir/v1/airsensor
 
 install_pas_archive:
-	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/pas --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.rda" http://smoke.mazamascience.com/data/PurpleAir/v1/pas
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/pas --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=3 --reject "index.html*" --accept "*.rda" http://data.mazamascience.com/PurpleAir/v1/pas
 
 install_pat_archive:
-	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/pat --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.rda" http://smoke.mazamascience.com/data/PurpleAir/v1/pat
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/pat --no-clobber --no-parent --no-host-directories --recursive --level=3 --cut-dirs=3 --reject "index.html*" --accept "*.rda" http://data.mazamascience.com/PurpleAir/v1/pat
 
 install_video_archive:
-	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/videos --no-clobber --no-parent --no-host-directories --recursive --level=2 --cut-dirs=4 --reject "index.html*" --accept "*.mp4" http://smoke.mazamascience.com/data/PurpleAir/v1/videos
+	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/videos --no-clobber --no-parent --no-host-directories --recursive --level=3 --cut-dirs=3 --reject "index.html*" --accept "*.mp4" http://data.mazamascience.com/PurpleAir/v1/videos
+
+# NOTE:  The old archive doesn't have month-level directories
+#install_old_video_archive:
+#	sudo wget --directory-prefix $(ARCHIVE_BASE_DIR)/videos --no-clobber --no-parent --no-host-directories --recursive --level=3 --cut-dirs=3 --reject "index.html*" --accept "*.mp4" http://smoke.mazamascience.com/data/PurpleAir/videos
