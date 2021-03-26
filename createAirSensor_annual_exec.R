@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . minor refactoring
-VERSION = "0.2.6"
+#  ----- . AirSensor 0.9.x . fix NAs with logical type
+VERSION = "0.2.7"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -183,6 +183,29 @@ tryCatch(
         
       }
       
+      # NOTE:  If a latest7 file is created with no data, all of the metadata
+      # NOTE:  fields with missing data will be of type "logical". This will 
+      # NOTE:  prevent them from being merged with metadata fields of type 
+      # NOTE:  character. Here we ensure that everything has the proper type.
+      
+      logger.trace("Correcting potential 'logical' types in metadata")
+      
+      latest7_meta <-
+        latest7$meta %>%
+        dplyr::mutate_if(is.logical, as.character) %>%
+        dplyr::mutate_at(
+          vars(longitude, latitude, elevation, pwfsl_closestDistance),
+          as.numeric
+        )
+      
+      year_meta <-
+        year_meta %>%
+        dplyr::mutate_if(is.logical, as.character) %>%
+        dplyr::mutate_at(
+          vars(longitude, latitude, elevation, pwfsl_closestDistance),
+          as.numeric
+        )
+      
       logger.trace("Combining metadata")
       
       # < NOTE:  Despite the efforts above, if a sensor has a new *location* there >
@@ -198,7 +221,7 @@ tryCatch(
       suppressMessages({
         meta <- 
           # Join the latest and yearly meta in that order to keep newer locations 
-          dplyr::full_join(latest7$meta, year_meta, by = NULL) %>%
+          dplyr::full_join(latest7_meta, year_meta, by = NULL) %>%
           # Remove rows with duplicate monitorID which we use as a unique identifier
           dplyr::distinct(monitorID, .keep_all = TRUE)
         
