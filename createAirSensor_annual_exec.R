@@ -194,7 +194,7 @@ tryCatch(
         latest7$meta %>%
         dplyr::mutate_if(is.logical, as.character) %>%
         dplyr::mutate_at(
-          vars(longitude, latitude, elevation, pwfsl_closestDistance),
+          dplyr::vars(longitude, latitude, elevation, pwfsl_closestDistance),
           as.numeric
         )
       
@@ -202,7 +202,7 @@ tryCatch(
         year_meta %>%
         dplyr::mutate_if(is.logical, as.character) %>%
         dplyr::mutate_at(
-          vars(longitude, latitude, elevation, pwfsl_closestDistance),
+          dplyr::vars(longitude, latitude, elevation, pwfsl_closestDistance),
           as.numeric
         )
       
