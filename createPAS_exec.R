@@ -20,7 +20,7 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
+    archiveBaseDir = file.path(getwd(), "data"),
     logDir = file.path(getwd(), "logs"),
     spatialDataDir = "~/Data/Spatial",
     version = FALSE
