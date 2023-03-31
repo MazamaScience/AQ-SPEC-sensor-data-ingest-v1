@@ -1,16 +1,22 @@
 #!/usr/local/bin/Rscript
 
-# This Rscript will download the latest synoptic JSON file from Purple Air. 
+# This Rscript will download the latest synoptic data from Purple Air. 
 #
 # See test/Makefile for testing options
 #
 
-#  ---- . AirSensor 0.9.x . updated PAS baseUrl
-VERSION = "0.2.6"
+#  ---- . AirSensor 1.1.x . first pass
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
+
+# NOTE:  The sf package needs to be loaded because of this issue:
+# NOTE:    https://github.com/MazamaScience/MazamaSpatialUtils/issues/76
+
 suppressPackageStartupMessages({
+  library(sf)
   library(MazamaCoreUtils)
+  library(MazamaSpatialUtils)
   library(AirSensor)
 })
 
@@ -18,6 +24,9 @@ suppressPackageStartupMessages({
 
 if ( interactive() ) {
   
+  # Set API keys
+  source("../global_vars.R")
+
   # RStudio session
   opt <- list(
     archiveBaseDir = file.path(getwd(), "data"),
@@ -28,6 +37,9 @@ if ( interactive() ) {
   
 } else {
   
+  # Set API keys
+  source("./global_vars.R")
+
   # Set up OptionParser
   library(optparse)
 
@@ -113,6 +125,13 @@ result <- try({
   # Set up MazamaSpatialUtils
   AirSensor::initializeMazamaSpatialUtils(opt$spatialDataDir)
   
+  MSU_version <- packageVersion("MazamaSpatialUtils")
+  if ( !stringr::str_detect(MSU_version, "^0\\.8") ) {
+    err_msg <- sprintf("Incompatible package version: MazamaSpatialUtils %s", MSU_version)
+    logger.error(err_msg)
+    stop(err_msg)
+  }
+  
   # Save it with the UTC YYYYmmdd stamp
   datestamp <- strftime(lubridate::now(tzone = timezone), "%Y%m%d", tz = timezone)
   monthstamp <- stringr::str_sub(datestamp, 1, 6)
@@ -127,14 +146,16 @@ result <- try({
   
   logger.info("Creating 'pas' data for %s", datestamp)
   
-  # Get archival PAS data
-  pas <- pas_createNew(
-    countryCodes = c('US'),
-    includePWFSL = TRUE,
-    lookbackDays = 1e6, # ~720 BC. Rome was in its youth.
-    baseUrl = 'https://www.purpleair.com/json?tempAccess5=true'
-  )
-
+  pas <-
+    pas_createNew(
+      api_key = PURPLE_AIR_API_READ_KEY,
+      countryCodes = "US",
+      stateCodes = "CA",
+      show_only = SCAQMD_SENSOR_INDICES,
+      lookbackDays = 365 * 5,
+      location_type = 0
+    ) 
+  
   # Save the archival version
   filename <- paste0("pas_", datestamp, "_archival.rda")
   filepath <- file.path(outputDir, filename)
@@ -143,7 +164,7 @@ result <- try({
 
   # Filter for those seen in the last week
   starttime <- lubridate::now(tzone = "UTC") - lubridate::ddays(7)
-  pas <- dplyr::filter(pas, .data$lastSeenDate >= starttime)
+  pas <- dplyr::filter(pas, .data$last_seen >= starttime)
 
   # Save the "latest" version
   filename <- paste0("pas_", datestamp, ".rda")

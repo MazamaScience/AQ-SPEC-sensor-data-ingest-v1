@@ -3,3 +3,10 @@
 .RData
 .Ruserdata
 .DS_Store
+
+# ----- Custom -----
+
+global_vars.R
+test/data
+test/logs
+
