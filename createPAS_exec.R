@@ -4,9 +4,12 @@
 #
 # See test/Makefile for testing options
 #
+# Or run from the command line with:
+# 
+# docker run --rm -ti -v /Users/jonathancallahan/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1:/app -v /Users/jonathancallahan/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1/data:/app/data -v /Users/jonathancallahan/Projects/SCAQMD/AQ-SPEC-sensor-data-ingest-v1/logs:/app/logs -w /app mazamascience/airsensor:latest R --vanilla
 
-#  ---- . AirSensor 1.1.x . first pass
-VERSION = "0.3.0"
+#  ---- . AirSensor 1.1.x . works with MazamaSpatialUtils 0.7.6 or 0.8.x
+VERSION = "0.3.1"
 
 # The following packages are attached here so they show up in the sessionInfo
 
@@ -124,13 +127,6 @@ result <- try({
   
   # Set up MazamaSpatialUtils
   AirSensor::initializeMazamaSpatialUtils(opt$spatialDataDir)
-  
-  MSU_version <- packageVersion("MazamaSpatialUtils")
-  if ( !stringr::str_detect(MSU_version, "^0\\.8") ) {
-    err_msg <- sprintf("Incompatible package version: MazamaSpatialUtils %s", MSU_version)
-    logger.error(err_msg)
-    stop(err_msg)
-  }
   
   # Save it with the UTC YYYYmmdd stamp
   datestamp <- strftime(lubridate::now(tzone = timezone), "%Y%m%d", tz = timezone)
