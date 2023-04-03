@@ -45,26 +45,26 @@ createPAT_latest: setup
 ################################################################################
 # AirSensor objects
 
-createAirSensor_latest: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_latest_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd --stateCode=CA --pattern=^SC.._..
-
-createAirSensor_extended: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_extended_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
-
-createAirSensor_201904: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201904 --stateCode=CA --pattern=^SCNP_..
-
-createAirSensor_201710: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201710 --stateCode=CA --pattern=^SCSB_..
-
-createAirSensor_annual: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_annual_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
+#createAirSensor_latest: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_latest_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd --stateCode=CA --pattern=^SC.._..
+#
+#createAirSensor_extended: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_extended_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
+#
+#createAirSensor_201904: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201904 --stateCode=CA --pattern=^SCNP_..
+#
+#createAirSensor_201710: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201710 --stateCode=CA --pattern=^SCSB_..
+#
+#createAirSensor_annual: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_annual_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
 
 ################################################################################
 # Videos
 
-createVideo: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createVideo_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --communityID=SCNP
+#createVideo: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createVideo_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --communityID=SCNP
 
 ################################################################################
 # main targets
@@ -73,11 +73,11 @@ show_data:
 	@echo ""
 	@cd $(BASE_PATH)/data; find `pwd`
 
-latest_test_suite: clean setup createPAS createPAT_latest createPAT_extended createAirSensor_latest createAirSensor_extended
-	@echo ""
-	@cd $(BASE_PATH)/data; find `pwd`
+#latest_test_suite: clean setup createPAS createPAT_latest createPAT_extended createAirSensor_latest createAirSensor_extended
+#	@echo ""
+#	@cd $(BASE_PATH)/data; find `pwd`
 
-full_test_suite: clean setup createPAS createPAT_latest createPAT_extended createPAT_201904 createPAT_201710 createAirSensor_latest createAirSensor_extended
-	@echo ""
-	@cd $(BASE_PATH)/data; find `pwd`
+#full_test_suite: clean setup createPAS createPAT_latest createPAT_extended createPAT_201904 createPAT_201710 createAirSensor_latest createAirSensor_extended
+#	@echo ""
+#	@cd $(BASE_PATH)/data; find `pwd`
 
