@@ -7,8 +7,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . pas_getDeviceDeploymentID()
-VERSION = "0.2.7"
+#  ----- . AirSensor 1.1.x . first pass
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -22,11 +22,8 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "test/output"),
-    logDir = file.path(getwd(), "test/logs"),
-    countryCode = "US",
-    stateCode = "CA",
-    pattern = "^[Ss][Cc].._..$",
+    archiveBaseDir = file.path(getwd(), "data"),
+    logDir = file.path(getwd(), "logs"),
     collectionName = "scaqmd",
     version = FALSE
   )  
@@ -46,21 +43,6 @@ if ( interactive() ) {
       c("-l","--logDir"), 
       default = getwd(), 
       help = "Output directory for generated .log file [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-c","--countryCode"), 
-      default = "US", 
-      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-s","--stateCode"), 
-      default = "CA", 
-      help = "Two character stateCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-p","--pattern"), 
-      default = "^[Ss][Cc].._..$", 
-      help = "String pattern passed to stringr::str_detect [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-n","--collectionName"), 
@@ -145,9 +127,7 @@ tryCatch(
 tryCatch(
   expr = {
     logger.info('Loading PAS data...')
-    pas <- 
-      pas_load() %>%
-      pas_filter(.data$countryCode == opt$countryCode)
+    pas <- pas_load()
   }, 
   error = function(e) {
     msg <- paste('Fatal PAS Load Execution: ', e)
@@ -156,17 +136,13 @@ tryCatch(
   }
 )
 
-# Subset by state if reqeusted
-if ( !is.null(opt$stateCode) )
-  pas <- pas_filter(pas, .data$stateCode == opt$stateCode)
-  
 # Capture Unique IDs
 tryCatch(
   expr = {
     # Get time series unique identifiers
     deviceDeploymentIDs <-
       pas %>%
-      pas_getDeviceDeploymentIDs(pattern = opt$pattern)
+      pas_getDeviceDeploymentIDs()
   },
   error = function(e) {
     msg <- paste('deviceDeploymentID not found: ', e)

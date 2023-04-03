@@ -45,9 +45,9 @@ createPAT_latest: setup
 ################################################################################
 # AirSensor objects
 
-#createAirSensor_latest: setup
-#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_latest_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd --stateCode=CA --pattern=^SC.._..
-#
+createAirSensor_latest: setup
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_latest_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
+
 #createAirSensor_extended: setup
 #	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_extended_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
 #
