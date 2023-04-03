@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . pas_getDeviceDeploymentID()
-VERSION = "0.2.7"
+#  ----- . AirSensor 1.1.x . first pass
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -22,11 +22,8 @@ if ( interactive() ) {
   # RStudio session
   # NOTE: Remeber to set the working directory for logging with setwd()
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "test/data"),
-    logDir = file.path(getwd(), "test/logs"),
-    countryCode = "US",
-    stateCode = "CA",
-    pattern = "^[Ss][Cc].._..$",
+    archiveBaseDir = file.path(getwd(), "data"),
+    logDir = file.path(getwd(), "logs"),
     version = FALSE
   )
 
@@ -42,21 +39,6 @@ if ( interactive() ) {
       c("-l","--logDir"),
       default = getwd(),
       help = "Output directory for generated .log file [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-c","--countryCode"), 
-      default = "US", 
-      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-s","--stateCode"),
-      default = "CA",
-      help = "Two character stateCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-p","--pattern"),
-      default = "^[Ss][Cc].._..$",
-      help = "String patter passed to stringr::str_detect  [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-V","--version"),
@@ -79,8 +61,6 @@ if ( opt$version ) {
 
 # ----- Validate parameters ----------------------------------------------------
 
-MazamaCoreUtils::stopIfNull(opt$countryCode)
-
 if ( dir.exists(opt$archiveBaseDir) ) {
   setArchiveBaseDir(opt$archiveBaseDir)
 } else {
@@ -92,21 +72,15 @@ if ( !dir.exists(opt$logDir) )
 
 # ----- Set up logging ---------------------------------------------------------
 
-if ( is.null(opt$stateCode) ) {
-  regionID <- opt$countryCode
-} else {
-  regionID <- paste0(opt$countryCode, ".", opt$stateCode)
-}
-
 logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_DEBUG.log")),
-  infoLog  = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_INFO.log")),
-  errorLog = file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_ERROR.log"))
+  traceLog = file.path(opt$logDir, paste0("createPAT_extended_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createPAT_extended_DEBUG.log")),
+  infoLog  = file.path(opt$logDir, paste0("createPAT_extended_INFO.log")),
+  errorLog = file.path(opt$logDir, paste0("createPAT_extended_ERROR.log"))
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createPAT_extended_",regionID,"_ERROR.log"))
+errorLog <- file.path(opt$logDir, paste0("createPAT_extended_ERROR.log"))
 
 if ( interactive() ) {
   logger.setLevel(TRACE)
@@ -187,9 +161,7 @@ tryCatch(
   expr = {
     # SCAQMD Database
     logger.info('Loading PAS data ...')
-    pas <- 
-      pas_load() %>%
-      pas_filter(.data$countryCode == opt$countryCode)
+    pas <- pas_load()
   },
   error = function(e) {
     msg <- paste('Fatal PAS load Execution: ', e)
@@ -199,19 +171,9 @@ tryCatch(
 )
 
 # Get Unique IDs
-tryCatch(
-  expr = {
-    logger.info('Capturing Unique Device Deployment IDs')
-    deviceDeploymentIDs <- 
-      pas %>%
-      pas_getDeviceDeploymentIDs(pattern = opt$pattern)
-  },
-  error = function(e) {
-    msg <- paste('Error in Device Deployment IDs: ', e)
-    logger.fatal(msg)
-    stop(msg)
-  }
-)
+deviceDeploymentIDs <-
+  pas %>%
+  pas_getDeviceDeploymentIDs()
 
 # ------ Create 45-day PAT objects ---------------------------------------------
 

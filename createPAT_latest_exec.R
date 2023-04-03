@@ -159,7 +159,7 @@ tryCatch(
 sensor_indices <- pas$sensor_index
 logger.info("Loading PAT data for %d sensors", length(sensor_indices))
 
-# Load PAT`
+# Load PAT
 tryCatch(
   expr = {
     # Init counts

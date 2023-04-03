@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . sensor_filterDatetime()
-VERSION = "0.2.7"
+#  ----- . AirSensor 1.1.x . first pass
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -21,8 +21,8 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "test/output"),
-    logDir = file.path(getwd(), "test/logs"),
+    archiveBaseDir = file.path(getwd(), "data"),
+    logDir = file.path(getwd(), "logs"),
     collectionName = "scaqmd",
     version = FALSE
   )  
