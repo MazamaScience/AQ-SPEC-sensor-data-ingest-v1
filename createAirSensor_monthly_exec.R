@@ -7,8 +7,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . fix use of archival pas objects
-VERSION = "0.2.8"
+#  ----- . AirSensor 1.1.x . first pass
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -24,9 +24,6 @@ if ( interactive() ) {
   opt <- list(
     archiveBaseDir = file.path(getwd(), "output"),
     logDir = file.path(getwd(), "logs"),
-    countryCode = "US",
-    stateCode = "CA",
-    pattern = "^SCSB_..",
     collectionName = "scaqmd",
     datestamp = "201710",
     version = FALSE
@@ -45,21 +42,6 @@ if ( interactive() ) {
       c("-l","--logDir"),
       default = getwd(),
       help = "Output directory for generated .log file [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-c","--countryCode"), 
-      default = "US", 
-      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-s","--stateCode"),
-      default = "CA",
-      help = "Two character stateCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-p","--pattern"),
-      default = "^[Ss][Cc].._..$",
-      help = "String pattern passed to stringr::str_detect [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-n","--collectionName"), 
@@ -93,8 +75,6 @@ if ( opt$version ) {
 # ----- Validate parameters ----------------------------------------------------
 
 timezone <- "UTC"
-
-MazamaCoreUtils::stopIfNull(opt$countryCode)
 
 if ( dir.exists(opt$archiveBaseDir) ) {
   setArchiveBaseDir(opt$archiveBaseDir)
@@ -194,59 +174,32 @@ tryCatch(
 
 # ------ Load PAS object -------------------------------------------------------
 
-# Load PAS object
 tryCatch(
   expr = {
-
-    if ( starttime < MazamaCoreUtils::parseDatetime(20191001, timezone = "UTC") ) {
-      
-      # NOTE:  The 20191001 pas object has 2017 information, later objects do not.
-      pas_datestamp <- "20191001"
-      
-    } else {
-      
-      # NOTE:  Load a pas object from the beginning of the next month to make sure
-      # NOTE:  that we catch any sensors deployed mid-month.
-      pas_datestamp <- 
-        MazamaCoreUtils::parseDatetime(datestamp, timezone = "UTC") %>%
-        lubridate::ceiling_date(starttime, unit = "month") %>%
-        strftime("%Y%m%d", tz = "UTC")
-      
-    }
-    
-    logger.info('Loading PAS data for %s', pas_datestamp)
-    
-    # NOTE:  Determine distinct records by using both the channel-specific ID
-    # NOTE:  and the locationID. If the sensor moves, we will get a new
-    # NOTE:  locationID and keep those records. Otherwise we retain the A- and
-    # NOTE:  B-channels but remove any subsequent records from pat_latest that
-    # NOTE:  have the same sensor in the same location.
-    
-    pas <- 
-      pas <- pas_load(
-        datestamp = pas_datestamp,
-        retries = 32,
-        timezone = "UTC",
-        archival = TRUE,
-        verbose = FALSE
-      ) %>%
-      dplyr::distinct(THINGSPEAK_PRIMARY_ID, locationID, .keep_all = TRUE) %>%
-      pas_filter(.data$countryCode == opt$countryCode) %>%
-      pas_filter(.data$lastSeenDate > starttime)
-    
+    # SCAQMD Database
+    logger.info('Loading PAS data ...')
+    pas <- pas_load(
+      datestamp = NULL, # TODO:  Use datestamp after enough PAS files have been generated
+      retries = 32,
+      timezone = "UTC",
+      archival = TRUE,
+      verbose = FALSE
+    )
   },
   error = function(e) {
-    msg <- paste('Fatal PAS Load Execution: ', e)
+    msg <- paste('Fatal PAS load Execution: ', e)
     logger.fatal(msg)
     stop(msg)
   }
 )
 
-# Get time series unique identifiers
+# Capture Unique IDs
 tryCatch(
   expr = {
-    deviceDeploymentIDs <- pas_getDeviceDeploymentIDs(pas, pattern = opt$pattern)
-    logger.info("Loading PAT data for %d sensors", length(deviceDeploymentIDs))
+    # Get time series unique identifiers
+    deviceDeploymentIDs <-
+      pas %>%
+      pas_getDeviceDeploymentIDs()
   },
   error = function(e) {
     msg <- paste('deviceDeploymentID not found: ', e)
@@ -269,7 +222,7 @@ for ( deviceDeploymentID in deviceDeploymentIDs ) {
   
   # Debug info
   logger.debug(
-    "%4d/%d pat_createAirSensor('%s')",
+    "%4d/%d pat_createAirSensor(id = '%s')",
     count,
     length(deviceDeploymentIDs),
     deviceDeploymentID

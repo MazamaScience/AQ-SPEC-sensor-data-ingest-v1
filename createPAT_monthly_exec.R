@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . fix use of archival pas objects
-VERSION = "0.2.8"
+#  ----- . AirSensor 1.1.x . first pass
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -18,21 +18,23 @@ suppressPackageStartupMessages({
 # ----- Get command line arguments ---------------------------------------------
 
 if ( interactive() ) {
-
+  
+  # Set API keys
+  source("../global_vars.R")
+  
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "test/data"),
-    logDir = file.path(getwd(), "test/logs"),
-    countryCode = "US",
-    stateCode = "CA",
-    pattern = "^[Ss][Cc][Ss][Bb]_..$",
+    archiveBaseDir = file.path(getwd(), "data"),
+    logDir = file.path(getwd(), "logs"),
     datestamp = "201710",
     version = FALSE
   )
 
 } else {
-
-  # Set up OptionParser
+  
+  # Set API keys
+  source("./global_vars.R")
+  
   option_list <- list(
     optparse::make_option(
       c("-o","--archiveBaseDir"),
@@ -43,21 +45,6 @@ if ( interactive() ) {
       c("-l","--logDir"),
       default = getwd(),
       help = "Output directory for generated .log file [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-c","--countryCode"), 
-      default = "US", 
-      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-s","--stateCode"),
-      default = "CA",
-      help = "Two character stateCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-p","--pattern"),
-      default = "^[Ss][Cc].._..$",
-      help = "String pattern passed to stringr::str_detect [default = \"%default\"]"
     ),
     optparse::make_option(
       c("-d","--datestamp"),
@@ -75,7 +62,6 @@ if ( interactive() ) {
   # Parse arguments
   opt <- optparse::parse_args(optparse::OptionParser(option_list = option_list))
 
-
 }
 
 # Print out version and quit
@@ -87,8 +73,6 @@ if ( opt$version ) {
 # ----- Validate parameters ----------------------------------------------------
 
 timezone <- "UTC"
-
-MazamaCoreUtils::stopIfNull(opt$countryCode)
 
 if ( dir.exists(opt$archiveBaseDir) ) {
   setArchiveBaseDir(opt$archiveBaseDir)
@@ -188,66 +172,27 @@ tryCatch(
 
 # ------ Load PAS object -------------------------------------------------------
 
-# Load PAS object
 tryCatch(
   expr = {
-    
-    if ( starttime < MazamaCoreUtils::parseDatetime(20191001, timezone = "UTC") ) {
-      
-      # NOTE:  The 20191001 pas object has 2017 information, later objects do not.
-      pas_datestamp <- "20191001"
-      
-    } else {
-      
-      # NOTE:  Load a pas object from the beginning of the next month to make sure
-      # NOTE:  that we catch any sensors deployed mid-month.
-      pas_datestamp <- 
-        MazamaCoreUtils::parseDatetime(datestamp, timezone = "UTC") %>%
-        lubridate::ceiling_date(starttime, unit = "month") %>%
-        strftime("%Y%m%d", tz = "UTC")
-      
-    }
-    
-    logger.info('Loading PAS data for %s', pas_datestamp)
-    
-    # NOTE:  Determine distinct records by using both the channel-specific ID
-    # NOTE:  and the locationID. If the sensor moves, we will get a new
-    # NOTE:  locationID and keep those records. Otherwise we retain the A- and
-    # NOTE:  B-channels but remove any subsequent records from pat_latest that
-    # NOTE:  have the same sensor in the same location.
-    
-    pas <- 
-      pas <- pas_load(
-        datestamp = pas_datestamp,
-        retries = 32,
-        timezone = "UTC",
-        archival = TRUE,
-        verbose = FALSE
-      ) %>%
-      dplyr::distinct(THINGSPEAK_PRIMARY_ID, locationID, .keep_all = TRUE) %>%
-      pas_filter(.data$countryCode == opt$countryCode) %>%
-      pas_filter(.data$lastSeenDate > starttime)
-    
+    # SCAQMD Database
+    logger.info('Loading PAS data ...')
+    pas <- pas_load(
+      datestamp = NULL, # TODO:  Use datestamp after enough PAS files have been generated
+      retries = 32,
+      timezone = "UTC",
+      archival = TRUE,
+      verbose = FALSE
+    )
   },
   error = function(e) {
-    msg <- paste('Fatal PAS Load Execution: ', e)
+    msg <- paste('Fatal PAS load Execution: ', e)
     logger.fatal(msg)
     stop(msg)
   }
 )
 
-# Get time series unique identifiers
-tryCatch(
-  expr = {
-    deviceDeploymentIDs <- pas_getDeviceDeploymentIDs(pas, pattern = opt$pattern)
-    logger.info("Loading PAT data for %d sensors", length(deviceDeploymentIDs))
-  },
-  error = function(e) {
-    msg <- paste('deviceDeploymentID not found: ', e)
-    logger.fatal(msg)
-    stop(msg)
-  }
-)
+sensor_indices <- pas$sensor_index
+logger.info("Loading PAT data for %d sensors", length(sensor_indices))
 
 # ------ Create PAT objects ----------------------------------------------------
 
@@ -257,33 +202,41 @@ tryCatch(
     # Init counts
     successCount <- 0
     count <- 0
-    for ( deviceDeploymentID in deviceDeploymentIDs ) {
+    
+    for ( sensor_index in sensor_indices ) {
+      
       # ++ count
       count <- count + 1
 
+      deviceDeploymentID <- 
+        pas %>%
+        dplyr::filter(.data$sensor_index == !!sensor_index) %>%
+        dplyr::pull(.data$deviceDeploymentID)
+      
       # Load the PAT objects
       tryCatch(
         expr = {
           logger.debug(
-            "%4d/%d pat_createNew(id = '%s', label = NULL, pas = pas, startdate = '%s', enddate = '%s')",
+            "%4d/%d pat_createNew(api_key, pas, '%s', '%s', '%s', 'UTC', 0)",
             count,
-            length(deviceDeploymentIDs),
-            deviceDeploymentID,
+            length(sensor_indices),
+            sensor_index,
             startdate,
             enddate
           )
-
-          # Load via ThingSpeak API JSON
-          pat <- pat_createNew(
-            id = deviceDeploymentID,
-            label = NULL,
-            pas = pas,
-            startdate = startdate,
-            enddate = enddate,
-            timezone = "UTC",
-            baseUrl = "https://api.thingspeak.com/channels/"
-          )
-
+          
+          pat <- 
+            pat_createNew(
+              api_key = PURPLE_AIR_API_READ_KEY,
+              pas = pas,
+              sensor_index = sensor_index,
+              startdate = startdate,
+              enddate = enddate,
+              timezone = "UTC",
+              average = 0,
+              verbose = FALSE
+            )
+          
           filename <- paste0("pat_", deviceDeploymentID, "_", monthstamp, ".rda")
           tryCatch(
             expr = {

@@ -28,7 +28,7 @@ if ( interactive() ) {
     logDir = file.path(getwd(), "logs"),
     version = FALSE
   )
-  
+
 } else {
   
   # Set API keys
@@ -170,7 +170,7 @@ tryCatch(
       
       # ++ count
       count <- count + 1
-      
+
       deviceDeploymentID <- 
         pas %>%
         dplyr::filter(.data$sensor_index == !!sensor_index) %>%
