@@ -63,8 +63,8 @@ createAirSensor_extended: setup
 ################################################################################
 # Videos
 
-#createVideo: setup
-#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createVideo_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --communityID=SCNP
+createVideo: setup
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createVideo_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --communityID=SCSB
 
 ################################################################################
 # main targets

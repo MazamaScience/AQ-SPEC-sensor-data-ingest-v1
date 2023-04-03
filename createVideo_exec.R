@@ -10,8 +10,8 @@
 # ./createVideo_exec.R --communityID="SCSB" -s 20190704 -r 4 -o ~/Desktop/ -v TRUE 
 # ./createVideo_exec.R -c SCSB -o test/data
 
-# ----- . AirSensor 1.0.0 . updated zoom settings
-VERSION = "0.3.2"
+# ----- . AirSensor 1.1.x . first pass
+VERSION = "0.4.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -35,15 +35,13 @@ if ( interactive() ) {
   
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "test/data"),
-    logDir = file.path(getwd(), "test/logs"),
+    archiveBaseDir = file.path(getwd(), "data"),
+    logDir = file.path(getwd(), "logs"),
     communityID = "SCUV",
     datestamp = NULL,
     timezone = "America/Los_Angeles",
     days = 7,
     frameRate = 6,
-    verbose = FALSE,
-    # outputDir = getwd(),
     version = FALSE
   )  
   
