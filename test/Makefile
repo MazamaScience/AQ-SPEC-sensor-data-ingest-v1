@@ -31,16 +31,16 @@ createPAS: desktop_download_data
 # PAT objects
 
 createPAT_latest: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_latest_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --stateCode=CA --pattern=^SC.._..
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_latest_exec.R --archiveBaseDir=/app/data --logDir=/app/logs 
 
-createPAT_extended: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_extended_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --stateCode=CA --pattern=^SC.._..
-
-createPAT_201904: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201904 --stateCode=CA --pattern=^SCNP_..
-
-createPAT_201710: setup
-	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201710 --stateCode=CA --pattern=^SCSB_..
+#createPAT_extended: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_extended_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --stateCode=CA --pattern=^SC.._..
+#
+#createPAT_201904: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201904 --stateCode=CA --pattern=^SCNP_..
+#
+#createPAT_201710: setup
+#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createPAT_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=201710 --stateCode=CA --pattern=^SCSB_..
 
 ################################################################################
 # AirSensor objects
@@ -70,14 +70,14 @@ createVideo: setup
 # main targets
 
 show_data:
-	echo ""
-	cd $(BASE_PATH)/data; find `pwd`
+	@echo ""
+	@cd $(BASE_PATH)/data; find `pwd`
 
 latest_test_suite: clean setup createPAS createPAT_latest createPAT_extended createAirSensor_latest createAirSensor_extended
-	echo ""
-	cd $(BASE_PATH)/data; find `pwd`
+	@echo ""
+	@cd $(BASE_PATH)/data; find `pwd`
 
 full_test_suite: clean setup createPAS createPAT_latest createPAT_extended createPAT_201904 createPAT_201710 createAirSensor_latest createAirSensor_extended
-	echo ""
-	cd $(BASE_PATH)/data; find `pwd`
+	@echo ""
+	@cd $(BASE_PATH)/data; find `pwd`
 

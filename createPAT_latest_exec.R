@@ -6,8 +6,8 @@
 # See test/Makefile for testing options
 #
 
-#  ----- . AirSensor 0.9.x . pas_getDeviceDeploymentID()
-VERSION = "0.2.6"
+#  ----- . AirSensor 1.1.x . first pass
+VERSION = "0.3.0"
 
 # The following packages are attached here so they show up in the sessionInfo
 suppressPackageStartupMessages({
@@ -18,19 +18,22 @@ suppressPackageStartupMessages({
 # ----- Get command line arguments ---------------------------------------------
 
 if ( interactive() ) {
-
+  
+  # Set API keys
+  source("../global_vars.R")
+  
   # RStudio session
   opt <- list(
-    archiveBaseDir = file.path(getwd(), "output"),
+    archiveBaseDir = file.path(getwd(), "data"),
     logDir = file.path(getwd(), "logs"),
-    countryCode = "US",
-    stateCode = "CA",
-    pattern = "^[Ss][Cc].._..$",
     version = FALSE
   )
-
+  
 } else {
-
+  
+  # Set API keys
+  source("./global_vars.R")
+  
   option_list <- list(
     optparse::make_option(
       c("-o","--archiveBaseDir"),
@@ -43,31 +46,16 @@ if ( interactive() ) {
       help = "Output directory for generated .log file [default = \"%default\"]"
     ),
     optparse::make_option(
-      c("-c","--countryCode"), 
-      default = "US", 
-      help = "Two character countryCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-s","--stateCode"),
-      default = "CA",
-      help = "Two character stateCode used to subset sensors [default = \"%default\"]"
-    ),
-    optparse::make_option(
-      c("-p","--pattern"),
-      default = "^[Ss][Cc].._..$",
-      help = "String pattern passed to stringr::str_detect [default = \"%default\"]"
-    ),
-    optparse::make_option(
       c("-V","--version"),
       action="store_true",
       default = FALSE,
       help = "Print out version number [default = \"%default\"]"
     )
   )
-
+  
   # Parse arguments
   opt <- optparse::parse_args(optparse::OptionParser(option_list=option_list))
-
+  
 }
 
 # Print out version and quit
@@ -77,8 +65,6 @@ if ( opt$version ) {
 }
 
 # ----- Validate parameters ----------------------------------------------------
-
-MazamaCoreUtils::stopIfNull(opt$countryCode)
 
 if ( dir.exists(opt$archiveBaseDir) ) {
   setArchiveBaseDir(opt$archiveBaseDir)
@@ -91,21 +77,15 @@ if ( !dir.exists(opt$logDir) )
 
 # ----- Set up logging ---------------------------------------------------------
 
-if ( is.null(opt$stateCode) ) {
-  regionID <- opt$countryCode
-} else {
-  regionID <- paste0(opt$countryCode, ".", opt$stateCode)
-}
-
 logger.setup(
-  traceLog = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_TRACE.log")),
-  debugLog = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_DEBUG.log")), 
-  infoLog  = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_INFO.log")), 
-  errorLog = file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_ERROR.log"))
+  traceLog = file.path(opt$logDir, paste0("createPAT_latest_TRACE.log")),
+  debugLog = file.path(opt$logDir, paste0("createPAT_latest_DEBUG.log")), 
+  infoLog  = file.path(opt$logDir, paste0("createPAT_latest_INFO.log")), 
+  errorLog = file.path(opt$logDir, paste0("createPAT_latest_ERROR.log"))
 )
 
 # For use at the very end
-errorLog <- file.path(opt$logDir, paste0("createPAT_latest_",regionID,"_ERROR.log"))
+errorLog <- file.path(opt$logDir, paste0("createPAT_latest_ERROR.log"))
 
 if ( interactive() ) {
   logger.setLevel(TRACE)
@@ -121,21 +101,20 @@ logger.debug("Script options: \n\n%s\n", optString)
 sessionString <- paste(capture.output(sessionInfo()), collapse = "\n")
 logger.debug("R session:\n\n%s\n", sessionString)
 
-
 # ------ Create PAT objects ----------------------------------------------------
 
 # Get times
 tryCatch(
   expr = {
     endtime <- lubridate::now(tzone = "UTC")
-    # TODO:  Can we ask for 7+ days without triggering multiple web requests?
-    # starttime <- lubridate::floor_date(endtime, unit = "day") - lubridate::ddays(7)
+    # NOTE:  We can only get 2 days of data per web request.
+    # NOTE:  But 7 was standard in the previous version so we stick with that.
     starttime <- endtime - lubridate::ddays(7)
-
+    
     # Get strings
     startdate <- strftime(starttime, "%Y-%m-%d %H:%M:%S", tz = "UTC")
     enddate <- strftime(endtime, "%Y-%m-%d %H:%M:%S", tz = "UTC")
-
+    
     # Create the UTC YYYYmmdd stamp
     datestamp <- strftime(starttime, "%Y%m%d", tz = "UTC")
     monthstamp <- stringr::str_sub(datestamp, 1, 6)
@@ -168,9 +147,7 @@ tryCatch(
 tryCatch(
   expr = {
     logger.info('Loading PAS data ...')
-    pas <-
-      pas_load() %>%
-      pas_filter(.data$countryCode == opt$countryCode)
+    pas <- pas_load()
   },
   error = function(e) {
     msg <- paste('Fatal PAS Load Execution: ', e)
@@ -179,26 +156,8 @@ tryCatch(
   }
 )
 
-# Subset by state if reqeusted
-if ( !is.null(opt$stateCode) )
-  pas <- pas_filter(pas, .data$stateCode == opt$stateCode)
-  
-# Capture Unique IDs
-tryCatch(
-  expr = {
-    # Get time series unique identifiers
-    deviceDeploymentIDs <-
-      pas %>%
-      pas_getDeviceDeploymentIDs(pattern = opt$pattern)
-  },
-  error = function(e) {
-    msg <- paste('deviceDeploymentID not found: ', e)
-    logger.fatal(msg)
-    stop(msg)
-  }
-)
-
-logger.info("Loading PAT data for %d sensors", length(deviceDeploymentIDs))
+sensor_indices <- pas$sensor_index
+logger.info("Loading PAT data for %d sensors", length(sensor_indices))
 
 # Load PAT`
 tryCatch(
@@ -206,42 +165,48 @@ tryCatch(
     # Init counts
     successCount <- 0
     count <- 0
-
-    for ( deviceDeploymentID in deviceDeploymentIDs ) {
+    
+    for ( sensor_index in sensor_indices ) {
       
       # ++ count
       count <- count + 1
-
+      
+      deviceDeploymentID <- 
+        pas %>%
+        dplyr::filter(.data$sensor_index == !!sensor_index) %>%
+        dplyr::pull(.data$deviceDeploymentID)
+      
       # Load the PAT objects
       tryCatch(
         expr = {
           logger.debug(
-            "%4d/%d pat_createNew(id = '%s', label = NULL, pas = pas, '%s', '%s')",
+            "%4d/%d pat_createNew(api_key, pas, '%s', '%s', '%s', 'UTC', 0)",
             count,
-            length(deviceDeploymentIDs),
-            deviceDeploymentID,
+            length(sensor_indices),
+            sensor_index,
             startdate,
             enddate
           )
-
-          # Load via ThingSpeak API JSON
-          pat <- pat_createNew(
-            id = deviceDeploymentID,
-            label = NULL,
-            pas = pas,
-            startdate = startdate,
-            enddate = enddate,
-            timezone = "UTC",
-            baseUrl = "https://api.thingspeak.com/channels/"
-          )
-
+          
+          pat <- 
+            pat_createNew(
+              api_key = PURPLE_AIR_API_READ_KEY,
+              pas = pas,
+              sensor_index = sensor_index,
+              startdate = startdate,
+              enddate = enddate,
+              timezone = "UTC",
+              average = 0,
+              verbose = FALSE
+            )
+          
           filename <- paste0("pat_", deviceDeploymentID, "_latest7.rda")
           tryCatch(
             expr = {
               filepath <- file.path(outputDir, filename)
               logger.trace("Writing PAT data to %s", filename)
               save(pat, file = filepath)
-              },
+            },
             error = function(e) {
               # NOTE: Throwing a `stop` here will yield a warning to the
               # NOTE: enclosing tryCatch
@@ -259,7 +224,7 @@ tryCatch(
         }
       )
     }
-
+    
   },
   error = function(e) {
     msg <- paste("Error creating latest PAT file: ", e)
