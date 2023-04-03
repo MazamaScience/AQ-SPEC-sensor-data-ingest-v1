@@ -51,8 +51,8 @@ createAirSensor_extended: setup
 createAirSensor_202212: setup
 	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_monthly_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --datestamp=202212
 
-#createAirSensor_annual: setup
-#	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_annual_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
+createAirSensor_annual: setup
+	docker run --rm -v $(BASE_PATH):/app -v $(BASE_PATH)/test/data:/app/data -v $(BASE_PATH)/test/logs:/app/logs -w /app mazamascience/airsensor:latest /app/createAirSensor_annual_exec.R --archiveBaseDir=/app/data --logDir=/app/logs --collectionName=scaqmd
 
 ################################################################################
 # Videos
