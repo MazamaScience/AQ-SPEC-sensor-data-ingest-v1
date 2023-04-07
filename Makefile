@@ -15,8 +15,8 @@ DAILY_CRONTAB:=crontab_daily_DO.txt
 
 # Install the docker image in which scripts will run
 docker_image:
-	docker pull mazamascience/airsensor:1.0.3
-	docker tag mazamascience/airsensor:1.0.3 mazamascience/airsensor:latest
+	docker pull mazamascience/airsensor:1.1.1
+	docker tag mazamascience/airsensor:1.1.1 mazamascience/airsensor:latest
 
 # Set up the archive base directory for data and logs
 base_dir:
