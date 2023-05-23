@@ -18,15 +18,15 @@ setArchiveBaseUrl("http://data.mazamascience.com/PurpleAir/v1")
 
 _For background on Docker, see:_
 
-* https://en.wikipedia.org/wiki/Docker_(software)
-* https://www.docker.com
+- https://en.wikipedia.org/wiki/Docker_(software)
+- https://www.docker.com
 
-All data proceessing is performed by scripts running inside of docker
+All data processing is performed by scripts running inside of docker
 containers. This level of virtualization allows containers and scripts to be
 loaded onto a system that has none of the other software dependencies required
 to run R.
 
-This repository incluces a `docker/Makefile` with targets and 
+This repository includes a `docker/Makefile` with targets and
 dependencies to simplify building a docker image.
 
 You can review current `airsensor` docker images with:
@@ -53,11 +53,11 @@ Each of the `~_exec.R` scripts is run on a daily schedule defined by
 _Note that all crontab entries must be on a single line. No line continuation
 characters are allowed._
 
-The `crontab` files, along with `test/Makefile` use the docker `-v` flag to 
+The `crontab` files, along with `test/Makefile` use the docker `-v` flag to
 mount host directories (aka "volumes") to predefined locations inside the
 docker container.
 
-To deploy the data ingest scripts, the contents of the `crontab` files should be 
+To deploy the data ingest scripts, the contents of the `crontab` files should be
 modified to reflect appropriate absolute paths on the host machine and then
 added to a privileged user's crontab so the scripts will be run on a daily basis.
 
@@ -65,7 +65,7 @@ added to a privileged user's crontab so the scripts will be run on a daily basis
 
 ### Files
 
-This directory hasthe following contents:
+This directory has the following contents:
 
 ```
 ├── Makefile
@@ -93,7 +93,7 @@ This directory hasthe following contents:
 Each of the `~_exec.R` scripts is run on a daily schedule defined by
 `crontab_daily.txt` files.
 
-The `docker/` directory has a Makefile for installing the docker image needed to 
+The `docker/` directory has a Makefile for installing the docker image needed to
 run the scripts.
 
 The `test/` directory has a Makefile for testing every script using the
@@ -101,10 +101,10 @@ installed docker image.
 
 ### Output Directories
 
-As each script is run, either at the command line or from a cron job, it will 
+As each script is run, either at the command line or from a cron job, it will
 generate output files in the directory specified with the `--archiveBaseDir` option.
-The following directory structure is required. R package functions assume the 
-following directory structure will be available  at some web accessible  
+The following directory structure is required. R package functions assume the
+following directory structure will be available at some web accessible
 `archiveBaseDir` or `archiveBasUrl`:
 
 ```
@@ -131,17 +131,17 @@ annual directory.
 
 ### Processing Logs
 
-As each script is run, either at the command line or from a cron job, it will 
-generate logging output in the directory specified with the `--logDir` option. 
-Log files contain the name of the processing script. Four different levels 
+As each script is run, either at the command line or from a cron job, it will
+generate logging output in the directory specified with the `--logDir` option.
+Log files contain the name of the processing script. Four different levels
 of logging are provided:
 
- * `ERROR` -- Something went wrong, sometimes resulting in no generation of an output file.
- * `INFO`  -- Summary information on data processed along with any warnings generated.
- * `DEBUG` -- Detailed processing information to help understand where processing might have gone wrong.
- * `TRACE` -- *Excruciatingly* detailed processing information including URL requests.
+- `ERROR` -- Something went wrong, sometimes resulting in no generation of an output file.
+- `INFO` -- Summary information on data processed along with any warnings generated.
+- `DEBUG` -- Detailed processing information to help understand where processing might have gone wrong.
+- `TRACE` -- _Excruciatingly_ detailed processing information including URL requests.
 
-Note that scripts run repeatedly in cron jobs will overwrite the logs so that 
+Note that scripts run repeatedly in cron jobs will overwrite the logs so that
 any failures seen in the log files represent the most recent run of the script
 generating the failure.
 
@@ -165,6 +165,5 @@ RStudio and running them interactively.
 
 ### Background Reading
 
-A quick refresher on docker commands is available at the 
+A quick refresher on docker commands is available at the
 [docker cheat sheet](https://github.com/wsargent/docker-cheat-sheet).
-
